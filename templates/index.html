@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare Ticketing System</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        function showFeedback(message, type) {
+            const feedback = document.getElementById('feedback');
+            feedback.innerText = message;
+            feedback.className = `mt-4 p-4 rounded ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+            feedback.style.display = 'block';
+            setTimeout(() => { feedback.style.display = 'none'; }, 3000);
+        }
+
+        function validateForm(formId) {
+            const form = document.getElementById(formId);
+            const inputs = form.querySelectorAll('input, select');
+            let valid = true;
+            inputs.forEach(input => {
+                if (!input.value) {
+                    input.classList.add('border-red-500');
+                    valid = false;
+                } else {
+                    input.classList.remove('border-red-500');
+                }
+            });
+            return valid;
+        }
+
+        async function submitForm(event, endpoint, formId) {
+            event.preventDefault();
+            if (!validateForm(formId)) {
+                showFeedback('Please fill all required fields', 'error');
+                return;
+            }
+            const form = document.getElementById(formId);
+            const formData = new FormData(form);
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    const idField = formId.replace('-form', '_id');
+                    showFeedback(`Success: ${formId.replace('-form', '')} ${idField in result ? 'created with ID ' + result[idField] : 'deleted'}`, 'success');
+                    form.reset();
+                    if (formId === 'delete-doctor-form') {
+                        window.location.reload(); // Refresh to update doctor list
+                    }
+                } else {
+                    showFeedback(result.message || 'Error processing request', 'error');
+                }
+            } catch (error) {
+                showFeedback('Error submitting form', 'error');
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-6 max-w-4xl">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Healthcare Ticketing System</h1>
+        <div id="feedback" class="hidden"></div>
+
+        <!-- Doctors List -->
+        {% if doctors %}
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Doctors</h2>
+            <table class="w-full bg-white shadow-md rounded-lg overflow-hidden">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="p-3 text-left">ID</th>
+                        <th class="p-3 text-left">Name</th>
+                        <th class="p-3 text-left">Specialty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doctor in doctors %}
+                    <tr class="border-t">
+                        <td class="p-3">{{ doctor[0] }}</td>
+                        <td class="p-3">{{ doctor[1] }}</td>
+                        <td class="p-3">{{ doctor[2] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Add Doctor -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add Doctor</h2>
+            <form id="doctor-form" onsubmit="submitForm(event, '/doctors', 'doctor-form')">
+                <div class="mb-4">
+                    <label class="block text-gray-600">Name</label>
+                    <input type="text" name="name" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Specialty</label>
+                    <input type="text" name="specialty" class="w-full p-2 border rounded-md" required>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Add Doctor</button>
+            </form>
+        </div>
+
+        <!-- Remove Doctor -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Remove Doctor</h2>
+            <form id="delete-doctor-form" onsubmit="submitForm(event, '/doctors/delete', 'delete-doctor-form')">
+                <div class="mb-4">
+                    <label class="block text-gray-600">Doctor</label>
+                    <select name="doctor_id" class="w-full p-2 border rounded-md" required>
+                        <option value="" disabled selected>Select a doctor</option>
+                        {% for doctor in doctors %}
+                        <option value="{{ doctor[0] }}">{{ doctor[1] }} ({{ doctor[2] }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">Remove Doctor</button>
+            </form>
+        </div>
+
+        <!-- Add Patient -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add Patient</h2>
+            <form id="patient-form" onsubmit="submitForm(event, '/patients', 'patient-form')">
+                <div class="mb-4">
+                    <label class="block text-gray-600">Name</label>
+                    <input type="text" name="name" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Email</label>
+                    <input type="email" name="email" class="w-full p-2 border rounded-md" required>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Add Patient</button>
+            </form>
+        </div>
+
+        <!-- Add Appointment Slot -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add Appointment Slot</h2>
+            <form id="slot-form" onsubmit="submitForm(event, '/slots', 'slot-form')">
+                <div class="mb-4">
+                    <label class="block text-gray-600">Doctor</label>
+                    <select name="doctor_id" class="w-full p-2 border rounded-md" required>
+                        <option value="" disabled selected>Select a doctor</option>
+                        {% for doctor in doctors %}
+                        <option value="{{ doctor[0] }}">{{ doctor[1] }} ({{ doctor[2] }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Date</label>
+                    <input type="date" name="date" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Start Time</label>
+                    <input type="time" name="start_time" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">End Time</label>
+                    <input type="time" name="end_time" class="w-full p-2 border rounded-md" required>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Add Slot</button>
+            </form>
+        </div>
+
+        <!-- Book Appointment -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Book Appointment</h2>
+            <form id="appointment-form" onsubmit="submitForm(event, '/appointments', 'appointment-form')">
+                <div class="mb-4">
+                    <label class="block text-gray-600">Patient ID</label>
+                    <input type="number" name="patient_id" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Slot ID</label>
+                    <input type="number" name="slot_id" class="w-full p-2 border rounded-md" required>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Book Appointment</button>
+            </form>
+        </div>
+
+        <!-- Cancel Appointment -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Cancel Appointment</h2>
+            <form id="cancellation-form" onsubmit="submitForm(event, '/cancellations', 'cancellation-form')">
+                <div class="mb-4">
+                    <label class="block text-gray-600">Appointment ID</label>
+                    <input type="number" name="appointment_id" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Reason</label>
+                    <input type="text" name="reason" class="w-full p-2 border rounded-md" required>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Cancel Appointment</button>
+            </form>
+        </div>
+
+        <!-- View Data Links -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">View Data</h2>
+            <div class="flex flex-col space-y-2">
+                <a href="/doctors/availability" class="text-blue-600 hover:underline">Check Doctor Availability</a>
+                <a href="/patients/appointments" class="text-blue-600 hover:underline">View Patient Appointments</a>
+                <a href="/cancellations/stats" class="text-blue-600 hover:underline">View Cancellation Stats</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

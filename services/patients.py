@@ -1,8 +1,10 @@
+from mysql.connector import Error
+
 class PatientService:
     def __init__(self, db):
         self.db = db
 
-    def add_patient(self, name, email):
+    def add_patient(self, name: str, email: str) -> int:
         query = "INSERT INTO patients (name, email) VALUES (%s, %s)"
         try:
             self.db.cursor.execute(query, (name, email))
@@ -12,7 +14,7 @@ class PatientService:
             print(f"Error adding patient: {e}")
             return None
 
-    def get_patient_appointments(self, patient_id):
+    def get_patient_appointments(self, patient_id: int) -> list:
         query = """
         SELECT a.id, d.name, s.date, s.start_time, s.end_time
         FROM appointments a

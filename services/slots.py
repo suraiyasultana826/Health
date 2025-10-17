@@ -1,8 +1,10 @@
+from mysql.connector import Error
+
 class SlotService:
     def __init__(self, db):
         self.db = db
 
-    def add_slot(self, doctor_id, date, start_time, end_time):
+    def add_slot(self, doctor_id: int, date: str, start_time: str, end_time: str) -> int:
         query = """
         INSERT INTO appointment_slots (doctor_id, date, start_time, end_time)
         VALUES (%s, %s, %s, %s)

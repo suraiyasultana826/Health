@@ -4,8 +4,7 @@ class CancellationService:
     def __init__(self, db):
         self.db = db
 
-    def cancel_appointment(self, appointment_id, reason):
-        # Check if appointment exists
+    def cancel_appointment(self, appointment_id: int, reason: str) -> int:
         check_query = "SELECT id FROM appointments WHERE id = %s"
         self.db.cursor.execute(check_query, (appointment_id,))
         if not self.db.cursor.fetchone():
@@ -32,7 +31,7 @@ class CancellationService:
             self.db.connection.rollback()
             return None
 
-    def get_cancellation_stats(self, doctor_id):
+    def get_cancellation_stats(self, doctor_id: int) -> tuple:
         query = """
         SELECT d.name, COUNT(c.id) as cancellation_count
         FROM cancellations c
