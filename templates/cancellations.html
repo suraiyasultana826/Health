@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Cancellations</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/static/scripts.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    {% include 'navbar.html' %}
+    <div class="container mx-auto p-6 max-w-4xl">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Cancellations</h1>
+
+        <!-- Feedback Modal -->
+        <div id="feedback-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+            <div id="modal-message" class="p-4 rounded-lg">
+                <button onclick="closeModal()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Close</button>
+            </div>
+        </div>
+
+        <!-- Add Cancellation -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add Cancellation</h2>
+            <form id="add-cancellation-form" onsubmit="submitForm(event, '/cancellations', 'add-cancellation-form', 'Cancellation')">
+                <div class="mb-4">
+                    <label class="block text-gray-600">Appointment ID</label>
+                    <input type="number" name="appointment_id" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Reason</label>
+                    <input type="text" name="reason" class="w-full p-2 border rounded-md" required>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Add Cancellation</button>
+            </form>
+        </div>
+
+        <!-- Update Cancellation -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Update Cancellation</h2>
+            <form id="update-cancellation-form" onsubmit="submitForm(event, '/cancellations/update', 'update-cancellation-form', 'Cancellation')">
+                <div class="mb-4">
+                    <label class="block text-gray-600">Cancellation ID</label>
+                    <input type="number" name="cancellation_id" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Reason</label>
+                    <input type="text" name="reason" class="w-full p-2 border rounded-md" required>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Update Cancellation</button>
+            </form>
+        </div>
+
+        <!-- Cancellations List -->
+        {% if cancellations %}
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Cancellations List</h2>
+            <table class="w-full bg-white shadow-md rounded-lg overflow-hidden">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="p-3 text-left">ID</th>
+                        <th class="p-3 text-left">Doctor</th>
+                        <th class="p-3 text-left">Patient</th>
+                        <th class="p-3 text-left">Date</th>
+                        <th class="p-3 text-left">Start Time</th>
+                        <th class="p-3 text-left">End Time</th>
+                        <th class="p-3 text-left">Reason</th>
+                        <th class="p-3 text-left">Cancelled At</th>
+                        <th class="p-3 text-left">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cancellation in cancellations %}
+                    <tr class="border-t">
+                        <td class="p-3">{{ cancellation[0] }}</td>
+                        <td class="p-3">{{ cancellation[1] }}</td>
+                        <td class="p-3">{{ cancellation[2] }}</td>
+                        <td class="p-3">{{ cancellation[3] }}</td>
+                        <td class="p-3">{{ cancellation[4] }}</td>
+                        <td class="p-3">{{ cancellation[5] }}</td>
+                        <td class="p-3">{{ cancellation[6] }}</td>
+                        <td class="p-3">{{ cancellation[7] }}</td>
+                        <td class="p-3">
+                            <button onclick="deleteEntity({{ cancellation[0] }}, 'Cancellation', '/cancellations/delete')" class="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-600">No cancellations found.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<nav class="bg-blue-600 p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+        <a href="/" class="text-white text-xl font-bold">Healthcare System</a>
+        <ul class="flex space-x-6">
+            <li>
+                <a href="/" class="text-white hover:text-blue-200 {% if request.url.path == '/' %}font-bold border-b-2 border-white{% endif %}">Home</a>
+            </li>
+            <li>
+                <a href="/doctors" class="text-white hover:text-blue-200 {% if request.url.path == '/doctors' %}font-bold border-b-2 border-white{% endif %}">Doctors</a>
+            </li>
+            <li>
+                <a href="/patients" class="text-white hover:text-blue-200 {% if request.url.path == '/patients' %}font-bold border-b-2 border-white{% endif %}">Patients</a>
+            </li>
+            <li>
+                <a href="/slots" class="text-white hover:text-blue-200 {% if request.url.path == '/slots' %}font-bold border-b-2 border-white{% endif %}">Slots</a>
+            </li>
+            <li>
+                <a href="/appointments" class="text-white hover:text-blue-200 {% if request.url.path == '/appointments' %}font-bold border-b-2 border-white{% endif %}">Appointments</a>
+            </li>
+            <li>
+                <a href="/cancellations" class="text-white hover:text-blue-200 {% if request.url.path == '/cancellations' %}font-bold border-b-2 border-white{% endif %}">Cancellations</a>
+            </li>
+        </ul>
+    </div>
+</nav>

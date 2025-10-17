@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Appointment Slots</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/static/scripts.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    {% include 'navbar.html' %}
+    <div class="container mx-auto p-6 max-w-4xl">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Appointment Slots</h1>
+
+        <!-- Feedback Modal -->
+        <div id="feedback-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+            <div id="modal-message" class="p-4 rounded-lg">
+                <button onclick="closeModal()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Close</button>
+            </div>
+        </div>
+
+        <!-- Add Slot -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add Slot</h2>
+            <form id="add-slot-form" onsubmit="submitForm(event, '/slots', 'add-slot-form', 'Slot')">
+                <div class="mb-4">
+                    <label class="block text-gray-600">Doctor</label>
+                    <select name="doctor_id" class="w-full p-2 border rounded-md" required>
+                        <option value="" disabled selected>Select a doctor</option>
+                        {% for doctor in doctors %}
+                        <option value="{{ doctor[0] }}">{{ doctor[1] }} ({{ doctor[2] }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Date</label>
+                    <input type="date" name="date" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Start Time</label>
+                    <input type="time" name="start_time" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">End Time</label>
+                    <input type="time" name="end_time" class="w-full p-2 border rounded-md" required>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Add Slot</button>
+            </form>
+        </div>
+
+        <!-- Update Slot -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Update Slot</h2>
+            <form id="update-slot-form" onsubmit="submitForm(event, '/slots/update', 'update-slot-form', 'Slot')">
+                <div class="mb-4">
+                    <label class="block text-gray-600">Slot ID</label>
+                    <input type="number" name="slot_id" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Date</label>
+                    <input type="date" name="date" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Start Time</label>
+                    <input type="time" name="start_time" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">End Time</label>
+                    <input type="time" name="end_time" class="w-full p-2 border rounded-md" required>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Update Slot</button>
+            </form>
+        </div>
+
+        <!-- Slots List -->
+        {% if slots %}
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Slots List</h2>
+            <table class="w-full bg-white shadow-md rounded-lg overflow-hidden">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="p-3 text-left">ID</th>
+                        <th class="p-3 text-left">Doctor</th>
+                        <th class="p-3 text-left">Date</th>
+                        <th class="p-3 text-left">Start Time</th>
+                        <th class="p-3 text-left">End Time</th>
+                        <th class="p-3 text-left">Available</th>
+                        <th class="p-3 text-left">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for slot in slots %}
+                    <tr class="border-t">
+                        <td class="p-3">{{ slot[0] }}</td>
+                        <td class="p-3">{{ slot[1] }}</td>
+                        <td class="p-3">{{ slot[2] }}</td>
+                        <td class="p-3">{{ slot[3] }}</td>
+                        <td class="p-3">{{ slot[4] }}</td>
+                        <td class="p-3">{{ 'Yes' if slot[5] else 'No' }}</td>
+                        <td class="p-3">
+                            <button onclick="deleteEntity({{ slot[0] }}, 'Slot', '/slots/delete')" class="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-600">No slots found.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

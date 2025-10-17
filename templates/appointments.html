@@ -3,30 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Appointments</title>
+    <title>Manage Appointments</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/static/scripts.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
+    {% include 'navbar.html' %}
     <div class="container mx-auto p-6 max-w-4xl">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6">Patient Appointments</h1>
-        <form action="/patients/appointments" method="get" class="mb-8 bg-white p-6 rounded-lg shadow-md">
-            <div class="mb-4">
-                <label class="block text-gray-600">Patient ID</label>
-                <input type="number" name="patient_id" class="w-full p-2 border rounded-md" required>
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Appointments</h1>
+
+        <!-- Feedback Modal -->
+        <div id="feedback-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+            <div id="modal-message" class="p-4 rounded-lg">
+                <button onclick="closeModal()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Close</button>
             </div>
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">View Appointments</button>
-        </form>
+        </div>
+
+        <!-- Add Appointment -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add Appointment</h2>
+            <form id="add-appointment-form" onsubmit="submitForm(event, '/appointments', 'add-appointment-form', 'Appointment')">
+                <div class="mb-4">
+                    <label class="block text-gray-600">Patient</label>
+                    <select name="patient_id" class="w-full p-2 border rounded-md" required>
+                        <option value="" disabled selected>Select a patient</option>
+                        {% for patient in patients %}
+                        <option value="{{ patient[0] }}">{{ patient[1] }} ({{ patient[2] }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Slot ID</label>
+                    <input type="number" name="slot_id" class="w-full p-2 border rounded-md" required>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Add Appointment</button>
+            </form>
+        </div>
+
+        <!-- Update Appointment -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Update Appointment</h2>
+            <form id="update-appointment-form" onsubmit="submitForm(event, '/appointments/update', 'update-appointment-form', 'Appointment')">
+                <div class="mb-4">
+                    <label class="block text-gray-600">Appointment ID</label>
+                    <input type="number" name="appointment_id" class="w-full p-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Patient</label>
+                    <select name="patient_id" class="w-full p-2 border rounded-md" required>
+                        <option value="" disabled selected>Select a patient</option>
+                        {% for patient in patients %}
+                        <option value="{{ patient[0] }}">{{ patient[1] }} ({{ patient[2] }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-600">Slot ID</label>
+                    <input type="number" name="slot_id" class="w-full p-2 border rounded-md" required>
+                </div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Update Appointment</button>
+            </form>
+        </div>
+
+        <!-- Appointments List -->
         {% if appointments %}
         <div class="mb-8">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Appointments</h2>
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Appointments List</h2>
             <table class="w-full bg-white shadow-md rounded-lg overflow-hidden">
                 <thead class="bg-gray-200">
                     <tr>
-                        <th class="p-3 text-left">Appointment ID</th>
-                        <th class="p-3 text-left">Doctor Name</th>
+                        <th class="p-3 text-left">ID</th>
+                        <th class="p-3 text-left">Patient</th>
+                        <th class="p-3 text-left">Doctor</th>
                         <th class="p-3 text-left">Date</th>
                         <th class="p-3 text-left">Start Time</th>
                         <th class="p-3 text-left">End Time</th>
+                        <th class="p-3 text-left">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -37,13 +90,18 @@
                         <td class="p-3">{{ appt[2] }}</td>
                         <td class="p-3">{{ appt[3] }}</td>
                         <td class="p-3">{{ appt[4] }}</td>
+                        <td class="p-3">{{ appt[5] }}</td>
+                        <td class="p-3">
+                            <button onclick="deleteEntity({{ appt[0] }}, 'Appointment', '/appointments/delete')" class="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700">Delete</button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        {% else %}
+        <p class="text-gray-600">No appointments found.</p>
         {% endif %}
-        <a href="/" class="text-blue-600 hover:underline">Back to Home</a>
     </div>
 </body>
 </html>
