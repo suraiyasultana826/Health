@@ -48,7 +48,7 @@
                     const idField = formId.replace('-form', '_id');
                     showFeedback(`Success: ${formId.replace('-form', '')} ${idField in result ? 'created with ID ' + result[idField] : 'deleted'}`, 'success');
                     form.reset();
-                    if (formId === 'delete-doctor-form') {
+                    if (formId === 'delete-doctor-form' || formId === 'delete-doctor-button') {
                         window.location.reload(); // Refresh to update doctor list
                     }
                 } else {
@@ -56,6 +56,27 @@
                 }
             } catch (error) {
                 showFeedback('Error submitting form', 'error');
+            }
+        }
+
+        async function deleteDoctor(doctorId) {
+            if (!confirm(`Are you sure you want to delete Doctor ID ${doctorId}?`)) return;
+            const formData = new FormData();
+            formData.append('doctor_id', doctorId);
+            try {
+                const response = await fetch('/doctors/delete', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showFeedback('Success: Doctor deleted', 'success');
+                    window.location.reload(); // Refresh to update doctor list
+                } else {
+                    showFeedback(result.message || 'Error deleting doctor', 'error');
+                }
+            } catch (error) {
+                showFeedback('Error deleting doctor', 'error');
             }
         }
     </script>
@@ -75,6 +96,7 @@
                         <th class="p-3 text-left">ID</th>
                         <th class="p-3 text-left">Name</th>
                         <th class="p-3 text-left">Specialty</th>
+                        <th class="p-3 text-left">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -83,6 +105,9 @@
                         <td class="p-3">{{ doctor[0] }}</td>
                         <td class="p-3">{{ doctor[1] }}</td>
                         <td class="p-3">{{ doctor[2] }}</td>
+                        <td class="p-3">
+                            <button onclick="deleteDoctor({{ doctor[0] }})" class="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700">Delete</button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
