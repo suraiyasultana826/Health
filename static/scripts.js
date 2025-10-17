@@ -11,6 +11,27 @@ function closeModal() {
     document.getElementById('feedback-modal').style.display = 'none';
 }
 
+function openAddDoctorModal() {
+    document.getElementById('add-doctor-modal').style.display = 'block';
+}
+
+function closeAddDoctorModal() {
+    document.getElementById('add-doctor-modal').style.display = 'none';
+    document.getElementById('add-doctor-form').reset();
+}
+
+function openEditDoctorModal(id, name, specialty) {
+    document.getElementById('edit-doctor-id').value = id;
+    document.getElementById('edit-doctor-name').value = name;
+    document.getElementById('edit-doctor-specialty').value = specialty;
+    document.getElementById('edit-doctor-modal').style.display = 'block';
+}
+
+function closeEditDoctorModal() {
+    document.getElementById('edit-doctor-modal').style.display = 'none';
+    document.getElementById('edit-doctor-form').reset();
+}
+
 function validateForm(formId) {
     const form = document.getElementById(formId);
     const inputs = form.querySelectorAll('input, select');
@@ -42,8 +63,10 @@ async function submitForm(event, endpoint, formId, entity) {
         const result = await response.json();
         if (result.status === 'success') {
             const idKey = entity.toLowerCase() + '_id';
-            showModal(`Success: ${entity} ${formId.includes('add') ? 'created with ID ' + result[idKey] : formId.includes('update') ? 'updated' : 'deleted'}`, 'success');
+            showModal(`Success: ${entity} ${formId.includes('add') ? 'created with ID ' + result[idKey] : 'updated'}`, 'success');
             form.reset();
+            if (formId.includes('add')) closeAddDoctorModal();
+            if (formId.includes('edit')) closeEditDoctorModal();
             setTimeout(() => window.location.reload(), 2000);
         } else {
             showModal(result.message || `Error processing ${entity.toLowerCase()} request`, 'error');
@@ -72,4 +95,18 @@ async function deleteEntity(id, entity, endpoint) {
     } catch (error) {
         showModal(`Error deleting ${entity.toLowerCase()}`, 'error');
     }
+}
+
+function filterDoctors() {
+    const searchName = document.getElementById('search-name').value.toLowerCase();
+    const filterSpecialty = document.getElementById('filter-specialty').value;
+    const rows = document.querySelectorAll('#doctors-table tbody tr');
+
+    rows.forEach(row => {
+        const name = row.dataset.name.toLowerCase();
+        const specialty = row.dataset.specialty;
+        const matchesName = name.includes(searchName);
+        const matchesSpecialty = filterSpecialty === '' || specialty === filterSpecialty;
+        row.style.display = matchesName && matchesSpecialty ? '' : 'none';
+    });
 }
