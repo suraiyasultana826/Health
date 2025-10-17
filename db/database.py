@@ -1,35 +1,45 @@
 import mysql.connector
+from mysql.connector import Error
 from dotenv import load_dotenv
 import os
-from mysql.connector import Error
 
 class Database:
-    def __init__(self):
+    def __init__(self, env_file: str = ".env.local"):
         self.connection = None
-        try:
-            root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-            dotenv_path = os.path.join(root, '.env.local')
-            load_dotenv(dotenv_path)
-
-            host = os.getenv('HOST')
-            user = os.getenv('USER')
-            password = os.getenv('PASSWORD')
-            database = os.getenv('DATABASE')
-            port = os.getenv('PORT')
-            print(f" |||||||||||||||||||||| Connecting to database at {host} with user {user}")
-        except Exception as e:
-            print(f"Error: {e}")
+        self.cursor = None
+        
+        # Load environment variables
+        root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        dotenv_path = os.path.join(root, env_file)
+        
+        if not os.path.exists(dotenv_path):
+            raise FileNotFoundError(f"Environment file {dotenv_path} not found")
+        
+        load_dotenv(dotenv_path)
+        
+        # Retrieve and validate environment variables
+        host = os.getenv('HOST')
+        user = os.getenv('USER')
+        password = os.getenv('PASSWORD')
+        database = os.getenv('DATABASE')
+        port = os.getenv('PORT')
+        
+        required_vars = {'HOST': host, 'USER': user, 'PASSWORD': password, 'DATABASE': database, 'PORT': port}
+        missing_vars = [key for key, value in required_vars.items() if value is None]
+        if missing_vars:
+            raise ValueError(f"Missing environment variables: {', '.join(missing_vars)}")
+        
         try:
             self.connection = mysql.connector.connect(
                 host=host,
                 user=user,
                 password=password,
                 database=database,
-                port=port
+                port=int(port)  # Ensure port is an integer
             )
             self.cursor = self.connection.cursor()
         except Error as e:
-            print(f"Error connecting to MySQL: {e}")
+            raise ConnectionError(f"Error connecting to MySQL: {e}") from e
 
     def create_schema(self):
         schema = """
@@ -78,7 +88,7 @@ class Database:
                     self.cursor.execute(statement)
             self.connection.commit()
         except Error as e:
-            print(f"Error creating schema: {e}")
+            raise RuntimeError(f"Error creating schema: {e}") from e
 
     def close(self):
         if self.connection and self.connection.is_connected():
