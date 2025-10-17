@@ -1,61 +1,65 @@
-from mysql.connector import Error
+from fastapi import APIRouter, HTTPException, Form
+from db.database import SessionLocal
+from db import database
 
-class DoctorService:
-    def __init__(self, db):
-        self.db = db
+router = APIRouter()
 
-    def add_doctor(self, name: str, specialty: str) -> int:
-        query = "INSERT INTO doctors (name, specialty) VALUES (%s, %s)"
-        try:
-            self.db.cursor.execute(query, (name, specialty))
-            self.db.connection.commit()
-            return self.db.cursor.lastrowid
-        except Error as e:
-            print(f"Error adding doctor: {e}")
-            return None
+def get_doctors(db):
+    return db.query(database.Doctor).all()
 
-    def get_doctor(self, doctor_id: int) -> tuple:
-        query = "SELECT id, name, specialty FROM doctors WHERE id = %s"
-        try:
-            self.db.cursor.execute(query, (doctor_id,))
-            return self.db.cursor.fetchone()
-        except Error as e:
-            print(f"Error fetching doctor: {e}")
-            return None
+@router.get("/list")
+async def list_doctors():
+    db = SessionLocal()
+    try:
+        doctors = get_doctors(db)
+        return [{"id": d.id, "name": d.name, "specialty": d.specialty} for d in doctors]
+    finally:
+        db.close()
 
-    def get_all_doctors(self) -> list:
-        query = "SELECT id, name, specialty FROM doctors"
-        try:
-            self.db.cursor.execute(query)
-            return self.db.cursor.fetchall()
-        except Error as e:
-            print(f"Error fetching doctors: {e}")
-            return []
+@router.post("/")
+async def create_doctor(name: str = Form(...), specialty: str = Form(...)):
+    db = SessionLocal()
+    try:
+        doctor = database.Doctor(name=name, specialty=specialty)
+        db.add(doctor)
+        db.commit()
+        db.refresh(doctor)
+        return {"status": "success", "doctor_id": doctor.id}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        db.close()
 
-    def update_doctor(self, doctor_id: int, name: str, specialty: str) -> bool:
-        query = "UPDATE doctors SET name = %s, specialty = %s WHERE id = %s"
-        try:
-            self.db.cursor.execute(query, (name, specialty, doctor_id))
-            self.db.connection.commit()
-            return self.db.cursor.rowcount > 0
-        except Error as e:
-            print(f"Error updating doctor: {e}")
-            self.db.connection.rollback()
-            return False
+@router.post("/update")
+async def update_doctor(doctor_id: int = Form(...), name: str = Form(...), specialty: str = Form(...)):
+    db = SessionLocal()
+    try:
+        doctor = db.query(database.Doctor).filter(database.Doctor.id == doctor_id).first()
+        if not doctor:
+            raise HTTPException(status_code=404, detail="Doctor not found")
+        doctor.name = name
+        doctor.specialty = specialty
+        db.commit()
+        return {"status": "success"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        db.close()
 
-    def delete_doctor(self, doctor_id: int) -> bool:
-        check_query = "SELECT COUNT(*) FROM appointment_slots WHERE doctor_id = %s"
-        try:
-            self.db.cursor.execute(check_query, (doctor_id,))
-            slot_count = self.db.cursor.fetchone()[0]
-            if slot_count > 0:
-                print(f"Error: Doctor ID {doctor_id} has {slot_count} associated appointment slots")
-                return False
-            delete_query = "DELETE FROM doctors WHERE id = %s"
-            self.db.cursor.execute(delete_query, (doctor_id,))
-            self.db.connection.commit()
-            return self.db.cursor.rowcount > 0
-        except Error as e:
-            print(f"Error deleting doctor: {e}")
-            self.db.connection.rollback()
-            return False
+@router.post("/delete")
+async def delete_doctor(doctor_id: int = Form(...)):
+    db = SessionLocal()
+    try:
+        doctor = db.query(database.Doctor).filter(database.Doctor.id == doctor_id).first()
+        if not doctor:
+            raise HTTPException(status_code=404, detail="Doctor not found")
+        db.delete(doctor)
+        db.commit()
+        return {"status": "success"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        db.close()

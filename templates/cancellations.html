@@ -7,91 +7,122 @@
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/static/scripts.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-100 font-sans">
     {% include 'navbar.html' %}
-    <div class="container mx-auto p-6 max-w-4xl">
+    <div class="container mx-auto p-6 max-w-5xl">
         <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Cancellations</h1>
 
         <!-- Feedback Modal -->
         <div id="feedback-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div id="modal-message" class="p-4 rounded-lg">
-                <button onclick="closeModal()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Close</button>
+            <div id="modal-message" class="p-6 rounded-lg shadow-lg max-w-md w-full">
+                <button onclick="closeModal()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 w-full">Close</button>
             </div>
         </div>
 
-        <!-- Add Cancellation -->
-        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add Cancellation</h2>
-            <form id="add-cancellation-form" onsubmit="submitForm(event, '/cancellations', 'add-cancellation-form', 'Cancellation')">
-                <div class="mb-4">
-                    <label class="block text-gray-600">Appointment ID</label>
-                    <input type="number" name="appointment_id" class="w-full p-2 border rounded-md" required>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-600">Reason</label>
-                    <input type="text" name="reason" class="w-full p-2 border rounded-md" required>
-                </div>
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Add Cancellation</button>
-            </form>
+        <!-- Add Cancellation Modal -->
+        <div id="add-cancellations-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full transform transition-all">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add Cancellation</h2>
+                <form id="add-cancellations-form" onsubmit="submitForm(event, '/cancellations', 'add-cancellations-form', 'Cancellation')">
+                    <div class="mb-4">
+                        <label class="block text-gray-600 text-sm font-medium mb-1">Appointment ID</label>
+                        <input type="number" name="appointment_id" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-600 text-sm font-medium mb-1">Reason</label>
+                        <input type="text" name="reason" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="flex justify-end space-x-2">
+                        <button type="button" onclick="closeAddModal('cancellations')" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">Cancel</button>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Add Cancellation</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
-        <!-- Update Cancellation -->
-        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Update Cancellation</h2>
-            <form id="update-cancellation-form" onsubmit="submitForm(event, '/cancellations/update', 'update-cancellation-form', 'Cancellation')">
-                <div class="mb-4">
-                    <label class="block text-gray-600">Cancellation ID</label>
-                    <input type="number" name="cancellation_id" class="w-full p-2 border rounded-md" required>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-600">Reason</label>
-                    <input type="text" name="reason" class="w-full p-2 border rounded-md" required>
-                </div>
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Update Cancellation</button>
-            </form>
+        <!-- Edit Cancellation Modal -->
+        <div id="edit-cancellations-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full transform transition-all">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Edit Cancellation</h2>
+                <form id="edit-cancellations-form" onsubmit="submitForm(event, '/cancellations/update', 'edit-cancellations-form', 'Cancellation')">
+                    <input type="hidden" name="cancellation_id" id="edit-cancellations-id">
+                    <div class="mb-4">
+                        <label class="block text-gray-600 text-sm font-medium mb-1">Appointment ID</label>
+                        <input type="number" name="appointment_id" id="edit-cancellations-appointment-id" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-600 text-sm font-medium mb-1">Reason</label>
+                        <input type="text" name="reason" id="edit-cancellations-reason" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="flex justify-end space-x-2">
+                        <button type="button" onclick="closeEditModal('cancellations')" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">Cancel</button>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Update Cancellation</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
-        <!-- Cancellations List -->
-        {% if cancellations %}
-        <div class="mb-8">
+        <!-- Search and Filter -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
             <h2 class="text-2xl font-semibold text-gray-700 mb-4">Cancellations List</h2>
-            <table class="w-full bg-white shadow-md rounded-lg overflow-hidden">
-                <thead class="bg-gray-200">
-                    <tr>
-                        <th class="p-3 text-left">ID</th>
-                        <th class="p-3 text-left">Doctor</th>
-                        <th class="p-3 text-left">Patient</th>
-                        <th class="p-3 text-left">Date</th>
-                        <th class="p-3 text-left">Start Time</th>
-                        <th class="p-3 text-left">End Time</th>
-                        <th class="p-3 text-left">Reason</th>
-                        <th class="p-3 text-left">Cancelled At</th>
-                        <th class="p-3 text-left">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for cancellation in cancellations %}
-                    <tr class="border-t">
-                        <td class="p-3">{{ cancellation[0] }}</td>
-                        <td class="p-3">{{ cancellation[1] }}</td>
-                        <td class="p-3">{{ cancellation[2] }}</td>
-                        <td class="p-3">{{ cancellation[3] }}</td>
-                        <td class="p-3">{{ cancellation[4] }}</td>
-                        <td class="p-3">{{ cancellation[5] }}</td>
-                        <td class="p-3">{{ cancellation[6] }}</td>
-                        <td class="p-3">{{ cancellation[7] }}</td>
-                        <td class="p-3">
-                            <button onclick="deleteEntity({{ cancellation[0] }}, 'Cancellation', '/cancellations/delete')" class="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700">Delete</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="flex flex-col md:flex-row md:items-end md:space-x-4 mb-4">
+                <div class="mb-4 md:mb-0 md:flex-1">
+                    <label class="block text-gray-600 text-sm font-medium mb-1">Search by ID</label>
+                    <input type="text" id="search-cancellations" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" placeholder="Enter cancellation ID" oninput="filterList('cancellations')">
+                </div>
+                <div class="mb-4 md:mb-0 md:flex-1">
+                    <label class="block text-gray-600 text-sm font-medium mb-1">Filter by Appointment ID</label>
+                    <select id="filter-cancellations" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" onchange="filterList('cancellations')">
+                        <option value="">All Appointments</option>
+                        {% for cancellation in cancellations %}
+                        <option value="{{ cancellation[1] }}">{{ cancellation[1] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button onclick="openAddModal('cancellations')" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-times-circle mr-2"></i>Add Cancellation
+                </button>
+            </div>
+
+            <!-- Cancellations List -->
+            <div id="cancellations-list">
+                {% if cancellations %}
+                <table id="cancellations-table" class="w-full bg-white shadow-md rounded-lg overflow-hidden">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="p-3 text-left">ID</th>
+                            <th class="p-3 text-left">Appointment ID</th>
+                            <th class="p-3 text-left">Reason</th>
+                            <th class="p-3 text-left">Cancelled At</th>
+                            <th class="p-3 text-left">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cancellation in cancellations %}
+                        <tr class="border-t" data-name="{{ cancellation[0] }}" data-filter="{{ cancellation[1] }}">
+                            <td class="p-3">{{ cancellation[0] }}</td>
+                            <td class="p-3">{{ cancellation[1] }}</td>
+                            <td class="p-3">{{ cancellation[2] or '' }}</td>
+                            <td class="p-3">{{ cancellation[3] }}</td>
+                            <td class="p-3 flex space-x-2">
+                                <button onclick="openEditModal('cancellations', {{ cancellation[0] }}, {{ cancellation[1] }}, '{{ cancellation[2] or '' }}')" class="text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteEntity({{ cancellation[0] }}, 'Cancellation', '/cancellations/delete')" class="text-red-600 hover:text-red-800">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-gray-600">No cancellations found.</p>
+                {% endif %}
+            </div>
         </div>
-        {% else %}
-        <p class="text-gray-600">No cancellations found.</p>
-        {% endif %}
     </div>
 </body>
-</html>
+</html> 

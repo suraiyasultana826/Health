@@ -9,29 +9,28 @@
 </head>
 <body class="bg-gray-100 font-sans">
     {% include 'navbar.html' %}
-    <div class="container mx-auto p-6 max-w-4xl">
-        <h1 class="text-4xl font-bold text-gray-800 mb-6 text-center">Healthcare Ticketing System</h1>
-        <p class="text-lg text-gray-600 mb-8 text-center">Manage doctors, patients, appointment slots, appointments, and cancellations with ease.</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <a href="/doctors" class="block bg-white p-6 rounded-lg shadow-md hover:bg-blue-50 transition">
-                <h2 class="text-2xl font-semibold text-gray-700">Doctors</h2>
-                <p class="text-gray-600">Add, update, delete, or view doctors.</p>
+    <div class="container mx-auto p-6 max-w-5xl">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Healthcare Ticketing System</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <a href="/doctors" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg">
+                <h2 class="text-xl font-semibold text-gray-700">Manage Doctors</h2>
+                <p class="text-gray-600">Add, update, or delete doctors.</p>
             </a>
-            <a href="/patients" class="block bg-white p-6 rounded-lg shadow-md hover:bg-blue-50 transition">
-                <h2 class="text-2xl font-semibold text-gray-700">Patients</h2>
-                <p class="text-gray-600">Manage patient information and appointments.</p>
+            <a href="/patients" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg">
+                <h2 class="text-xl font-semibold text-gray-700">Manage Patients</h2>
+                <p class="text-gray-600">Add, update, or delete patients.</p>
             </a>
-            <a href="/slots" class="block bg-white p-6 rounded-lg shadow-md hover:bg-blue-50 transition">
-                <h2 class="text-2xl font-semibold text-gray-700">Appointment Slots</h2>
-                <p class="text-gray-600">Create or manage doctor availability slots.</p>
+            <a href="/slots" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg">
+                <h2 class="text-xl font-semibold text-gray-700">Manage Slots</h2>
+                <p class="text-gray-600">Create or update appointment slots.</p>
             </a>
-            <a href="/appointments" class="block bg-white p-6 rounded-lg shadow-md hover:bg-blue-50 transition">
-                <h2 class="text-2xl font-semibold text-gray-700">Appointments</h2>
-                <p class="text-gray-600">Book or manage patient appointments.</p>
+            <a href="/appointments" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg">
+                <h2 class="text-xl font-semibold text-gray-700">Manage Appointments</h2>
+                <p class="text-gray-600">Book or update appointments.</p>
             </a>
-            <a href="/cancellations" class="block bg-white p-6 rounded-lg shadow-md hover:bg-blue-50 transition">
-                <h2 class="text-2xl font-semibold text-gray-700">Cancellations</h2>
-                <p class="text-gray-600">View or manage appointment cancellations.</p>
+            <a href="/cancellations" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg">
+                <h2 class="text-xl font-semibold text-gray-700">Manage Cancellations</h2>
+                <p class="text-gray-600">Record or update cancellations.</p>
             </a>
         </div>
     </div>

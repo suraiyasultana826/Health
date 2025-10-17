@@ -1,96 +1,122 @@
-import mysql.connector
-from mysql.connector import Error
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, ForeignKey, Date, Time
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import func
 from dotenv import load_dotenv
 import os
 
-class Database:
-    def __init__(self, env_file: str = ".env.local"):
-        self.connection = None
-        self.cursor = None
-        
-        # Load environment variables
-        root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        dotenv_path = os.path.join(root, env_file)
-        
-        if not os.path.exists(dotenv_path):
-            raise FileNotFoundError(f"Environment file {dotenv_path} not found")
-        
-        load_dotenv(dotenv_path)
-        
-        # Retrieve and validate environment variables
-        host = os.getenv('HOST')
-        user = os.getenv('USER')
-        password = os.getenv('PASSWORD')
-        database = os.getenv('DATABASE')
-        port = os.getenv('PORT')
-        
-        required_vars = {'HOST': host, 'USER': user, 'PASSWORD': password, 'DATABASE': database, 'PORT': port}
-        missing_vars = [key for key, value in required_vars.items() if value is None]
-        if missing_vars:
-            raise ValueError(f"Missing environment variables: {', '.join(missing_vars)}")
-        
-        try:
-            self.connection = mysql.connector.connect(
-                host=host,
-                user=user,
-                password=password,
-                database=database,
-                port=int(port)  # Ensure port is an integer
-            )
-            self.cursor = self.connection.cursor()
-        except Error as e:
-            raise ConnectionError(f"Error connecting to MySQL: {e}") from e
+load_dotenv('.env.local')
+DATABASE_URL = os.getenv('DATABASE_URL')
 
-    def create_schema(self):
-        schema = """
-        CREATE TABLE IF NOT EXISTS doctors (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            specialty VARCHAR(100) NOT NULL
-        );
+engine = create_engine(DATABASE_URL)
+Base = declarative_base()
 
-        CREATE TABLE IF NOT EXISTS patients (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(100) NOT NULL,
-            email VARCHAR(100) NOT NULL
-        );
+class Doctor(Base):
+    __tablename__ = 'doctors'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    specialty = Column(String(100), nullable=False)
 
-        CREATE TABLE IF NOT EXISTS appointment_slots (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            doctor_id INT,
-            date DATE NOT NULL,
-            start_time TIME NOT NULL,
-            end_time TIME NOT NULL,
-            is_available BOOLEAN DEFAULT TRUE,
-            FOREIGN KEY (doctor_id) REFERENCES doctors(id)
-        );
+class Patient(Base):
+    __tablename__ = 'patients'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(100), nullable=False)
 
-        CREATE TABLE IF NOT EXISTS appointments (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            patient_id INT,
-            slot_id INT,
-            booked_at DATETIME NOT NULL,
-            FOREIGN KEY (patient_id) REFERENCES patients(id),
-            FOREIGN KEY (slot_id) REFERENCES appointment_slots(id)
-        );
+class AppointmentSlot(Base):
+    __tablename__ = 'appointment_slots'
+    id = Column(Integer, primary_key=True)
+    doctor_id = Column(Integer, ForeignKey('doctors.id'))
+    date = Column(Date, nullable=False)
+    start_time = Column(Time, nullable=False)
+    end_time = Column(Time, nullable=False)
+    is_available = Column(Boolean, default=True)
 
-        CREATE TABLE IF NOT EXISTS cancellations (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            appointment_id INT,
-            reason VARCHAR(255),
-            cancelled_at DATETIME NOT NULL,
-            FOREIGN KEY (appointment_id) REFERENCES appointments(id)
-        );
-        """
-        try:
-            for statement in schema.split(';'):
-                if statement.strip():
-                    self.cursor.execute(statement)
-            self.connection.commit()
-        except Error as e:
-            raise RuntimeError(f"Error creating schema: {e}") from e
+class Appointment(Base):
+    __tablename__ = 'appointments'
+    id = Column(Integer, primary_key=True)
+    patient_id = Column(Integer, ForeignKey('patients.id'))
+    slot_id = Column(Integer, ForeignKey('appointment_slots.id'))
+    booked_at = Column(DateTime, nullable=False)
 
-    def close(self):
-        if self.connection and self.connection.is_connected():
-            self.cursor.close()
-            self.connection.close()
+class Cancellation(Base):
+    __tablename__ = 'cancellations'
+    id = Column(Integer, primary_key=True)
+    appointment_id = Column(Integer, ForeignKey('appointments.id'))
+    reason = Column(String(255))
+    cancelled_at = Column(DateTime, nullable=False)
+
+class Change(Base):
+    __tablename__ = 'changes'
+    id = Column(Integer, primary_key=True)
+    table_name = Column(String(50), nullable=False)
+    action = Column(String(20), nullable=False)
+    record_id = Column(Integer, nullable=False)
+    timestamp = Column(DateTime, server_default=func.now())
+
+Base.metadata.create_all(engine)
+
+SessionLocal = sessionmaker(bind=engine)
+
+# def init_triggers():
+#     with engine.connect() as conn:
+#         for table in ['doctors', 'patients', 'appointment_slots', 'appointments', 'cancellations']:
+#             conn.execute(f"DROP TRIGGER IF EXISTS {table}_insert_trigger")
+#             conn.execute(f"DROP TRIGGER IF EXISTS {table}_update_trigger")
+#             conn.execute(f"DROP TRIGGER IF EXISTS {table}_delete_trigger")
+            
+#             conn.execute(f"""
+#                 CREATE TRIGGER {table}_insert_trigger
+#                 AFTER INSERT ON {table}
+#                 FOR EACH ROW
+#                 BEGIN
+#                     INSERT INTO changes (table_name, action, record_id)
+#                     VALUES ('{table}', 'INSERT', NEW.id);
+#                 END;
+#             """)
+#             conn.execute(f"""
+#                 CREATE TRIGGER {table}_update_trigger
+#                 AFTER UPDATE ON {table}
+#                 FOR EACH ROW
+#                 BEGIN
+#                     INSERT INTO changes (table_name, action, record_id)
+#                     VALUES ('{table}', 'UPDATE', NEW.id);
+#                 END;
+#             """)
+#             conn.execute(f"""
+#                 CREATE TRIGGER {table}_delete_trigger
+#                 AFTER DELETE ON {table}
+#                 FOR EACH ROW
+#                 BEGIN
+#                     INSERT INTO changes (table_name, action, record_id)
+#                     VALUES ('{table}', 'DELETE', OLD.id);
+#                 END;
+#             """)
+#         conn.commit()
+
+# def seed_data():
+#     db = SessionLocal()
+#     try:
+#         # Check if doctors table is empty
+#         if db.query(Doctor).count() == 0:
+#             doctors = [
+#                 Doctor(name="Dr. John Smith", specialty="Cardiology"),
+#                 Doctor(name="Dr. Jane Doe", specialty="Pediatrics"),
+#             ]
+#             db.add_all(doctors)
+#         # Check if patients table is empty
+#         if db.query(Patient).count() == 0:
+#             patients = [
+#                 Patient(name="Alice Brown", email="alice@example.com"),
+#                 Patient(name="Bob White", email="bob@example.com"),
+#             ]
+#             db.add_all(patients)
+#         db.commit()
+#     except Exception as e:
+#         db.rollback()
+#         print(f"Error seeding data: {e}")
+#     finally:
+#         db.close()
+
+# init_triggers()
+# seed_data()

@@ -1,76 +1,63 @@
-from mysql.connector import Error
+from fastapi import APIRouter, HTTPException, Form
+from db.database import SessionLocal
+from db import database
 
-class PatientService:
-    def __init__(self, db):
-        self.db = db
+router = APIRouter()
 
-    def add_patient(self, name: str, email: str) -> int:
-        query = "INSERT INTO patients (name, email) VALUES (%s, %s)"
-        try:
-            self.db.cursor.execute(query, (name, email))
-            self.db.connection.commit()
-            return self.db.cursor.lastrowid
-        except Error as e:
-            print(f"Error adding patient: {e}")
-            return None
+def get_patients(db):
+    return db.query(database.Patient).all()
 
-    def get_patient(self, patient_id: int) -> tuple:
-        query = "SELECT id, name, email FROM patients WHERE id = %s"
-        try:
-            self.db.cursor.execute(query, (patient_id,))
-            return self.db.cursor.fetchone()
-        except Error as e:
-            print(f"Error fetching patient: {e}")
-            return None
+@router.get("/list")
+async def list_patients():
+    db = SessionLocal()
+    patients = get_patients(db)
+    db.close()
+    return [{"id": p.id, "name": p.name, "email": p.email} for p in patients]
 
-    def get_all_patients(self) -> list:
-        query = "SELECT id, name, email FROM patients"
-        try:
-            self.db.cursor.execute(query)
-            return self.db.cursor.fetchall()
-        except Error as e:
-            print(f"Error fetching patients: {e}")
-            return []
+@router.post("/")
+async def create_patient(name: str = Form(...), email: str = Form(...)):
+    db = SessionLocal()
+    try:
+        patient = database.Patient(name=name, email=email)
+        db.add(patient)
+        db.commit()
+        db.refresh(patient)
+        return {"status": "success", "patient_id": patient.id}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        db.close()
 
-    def update_patient(self, patient_id: int, name: str, email: str) -> bool:
-        query = "UPDATE patients SET name = %s, email = %s WHERE id = %s"
-        try:
-            self.db.cursor.execute(query, (name, email, patient_id))
-            self.db.connection.commit()
-            return self.db.cursor.rowcount > 0
-        except Error as e:
-            print(f"Error updating patient: {e}")
-            self.db.connection.rollback()
-            return False
+@router.post("/update")
+async def update_patient(patient_id: int = Form(...), name: str = Form(...), email: str = Form(...)):
+    db = SessionLocal()
+    try:
+        patient = db.query(database.Patient).filter(database.Patient.id == patient_id).first()
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient not found")
+        patient.name = name
+        patient.email = email
+        db.commit()
+        return {"status": "success"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        db.close()
 
-    def delete_patient(self, patient_id: int) -> bool:
-        check_query = "SELECT COUNT(*) FROM appointments WHERE patient_id = %s"
-        try:
-            self.db.cursor.execute(check_query, (patient_id,))
-            appt_count = self.db.cursor.fetchone()[0]
-            if appt_count > 0:
-                print(f"Error: Patient ID {patient_id} has {appt_count} associated appointments")
-                return False
-            delete_query = "DELETE FROM patients WHERE id = %s"
-            self.db.cursor.execute(delete_query, (patient_id,))
-            self.db.connection.commit()
-            return self.db.cursor.rowcount > 0
-        except Error as e:
-            print(f"Error deleting patient: {e}")
-            self.db.connection.rollback()
-            return False
-
-    def get_patient_appointments(self, patient_id: int) -> list:
-        query = """
-        SELECT a.id, d.name, s.date, s.start_time, s.end_time
-        FROM appointments a
-        JOIN appointment_slots s ON a.slot_id = s.id
-        JOIN doctors d ON s.doctor_id = d.id
-        WHERE a.patient_id = %s
-        """
-        try:
-            self.db.cursor.execute(query, (patient_id,))
-            return self.db.cursor.fetchall()
-        except Error as e:
-            print(f"Error fetching patient appointments: {e}")
-            return []
+@router.post("/delete")
+async def delete_patient(patient_id: int = Form(...)):
+    db = SessionLocal()
+    try:
+        patient = db.query(database.Patient).filter(database.Patient.id == patient_id).first()
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient not found")
+        db.delete(patient)
+        db.commit()
+        return {"status": "success"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        db.close()
