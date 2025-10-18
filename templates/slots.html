@@ -1,949 +1,1208 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Manage Appointment Slots</title>
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/static/scripts.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <style>
-        .slot-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      .slot-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .slot-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+      }
+      .calendar-day {
+        transition: all 0.3s;
+        cursor: pointer;
+      }
+      .calendar-day:hover {
+        transform: scale(1.1);
+      }
+      .calendar-day.today {
+        border: 3px solid #3b82f6;
+        font-weight: bold;
+      }
+      .calendar-day.selected {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-weight: bold;
+      }
+      .timeline-slot {
+        position: relative;
+        padding: 1rem;
+        border-left: 3px solid #e5e7eb;
+      }
+      .timeline-slot::before {
+        content: "";
+        position: absolute;
+        left: -7px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #3b82f6;
+      }
+      .timeline-slot.available::before {
+        background: #10b981;
+      }
+      .timeline-slot.booked::before {
+        background: #ef4444;
+      }
+      .clock-hand {
+        transition: transform 0.3s;
+      }
+      @keyframes pulse-ring {
+        0% {
+          transform: scale(0.95);
+          opacity: 1;
         }
-        .slot-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+        50% {
+          transform: scale(1.05);
+          opacity: 0.7;
         }
-        .calendar-day {
-            transition: all 0.3s;
-            cursor: pointer;
+        100% {
+          transform: scale(0.95);
+          opacity: 1;
         }
-        .calendar-day:hover {
-            transform: scale(1.1);
-        }
-        .calendar-day.today {
-            border: 3px solid #3b82f6;
-            font-weight: bold;
-        }
-        .calendar-day.selected {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-weight: bold;
-        }
-        .timeline-slot {
-            position: relative;
-            padding: 1rem;
-            border-left: 3px solid #e5e7eb;
-        }
-        .timeline-slot::before {
-            content: '';
-            position: absolute;
-            left: -7px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #3b82f6;
-        }
-        .timeline-slot.available::before {
-            background: #10b981;
-        }
-        .timeline-slot.booked::before {
-            background: #ef4444;
-        }
-        .clock-hand {
-            transition: transform 0.3s;
-        }
-        @keyframes pulse-ring {
-            0% {
-                transform: scale(0.95);
-                opacity: 1;
-            }
-            50% {
-                transform: scale(1.05);
-                opacity: 0.7;
-            }
-            100% {
-                transform: scale(0.95);
-                opacity: 1;
-            }
-        }
-        .pulse-ring {
-            animation: pulse-ring 2s infinite;
-        }
-        .time-picker {
-            appearance: none;
-        }
+      }
+      .pulse-ring {
+        animation: pulse-ring 2s infinite;
+      }
+      .time-picker {
+        appearance: none;
+      }
     </style>
-</head>
-<body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen font-sans">
+  </head>
+  <body
+    class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen font-sans"
+  >
     {% include 'navbar.html' %}
-    
+
     <div class="container mx-auto p-8 max-w-7xl">
-        <!-- Hero Section -->
-        <div class="text-center mb-12">
-            <h1 class="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 mb-4">
-                <i class="fas fa-clock mr-3"></i>Appointment Slot Management
-            </h1>
-            <p class="text-xl text-gray-600">Schedule and manage doctor availability with ease</p>
+      <!-- Hero Section -->
+      <div class="text-center mb-12">
+        <h1
+          class="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 mb-4"
+        >
+          <i class="fas fa-clock mr-3"></i>Appointment Slot Management
+        </h1>
+        <p class="text-xl text-gray-600">
+          Schedule and manage doctor availability with ease
+        </p>
+      </div>
+
+      <!-- Statistics Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div
+          class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-blue-500"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-600 text-sm font-semibold mb-1">
+                Total Slots
+              </p>
+              <h3
+                class="text-4xl font-bold text-gray-800"
+                id="total-slots-stat"
+              >
+                0
+              </h3>
+            </div>
+            <div class="bg-blue-100 rounded-full p-4">
+              <i class="fas fa-calendar-alt text-3xl text-blue-600"></i>
+            </div>
+          </div>
         </div>
 
-        <!-- Statistics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-blue-500">
-                <div class="flex items-center justify-between">
+        <div
+          class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-green-500"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-600 text-sm font-semibold mb-1">Available</p>
+              <h3
+                class="text-4xl font-bold text-green-600"
+                id="available-slots-stat"
+              >
+                0
+              </h3>
+            </div>
+            <div class="bg-green-100 rounded-full p-4">
+              <i class="fas fa-check-circle text-3xl text-green-600"></i>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-red-500"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-600 text-sm font-semibold mb-1">Booked</p>
+              <h3
+                class="text-4xl font-bold text-red-600"
+                id="booked-slots-stat"
+              >
+                0
+              </h3>
+            </div>
+            <div class="bg-red-100 rounded-full p-4">
+              <i class="fas fa-calendar-check text-3xl text-red-600"></i>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-purple-500"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-600 text-sm font-semibold mb-1">
+                Today's Slots
+              </p>
+              <h3
+                class="text-4xl font-bold text-purple-600"
+                id="today-slots-stat"
+              >
+                0
+              </h3>
+            </div>
+            <div class="bg-purple-100 rounded-full p-4">
+              <i class="fas fa-clock text-3xl text-purple-600"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feedback Modal -->
+      <div
+        id="feedback-modal"
+        class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50"
+      >
+        <div
+          id="modal-message"
+          class="p-6 rounded-lg shadow-lg max-w-md w-full"
+        >
+          <button
+            onclick="closeModal()"
+            class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 w-full"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+
+      <!-- Add Slot Modal -->
+      <div
+        id="add-appointment_slots-modal"
+        class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50"
+      >
+        <div
+          class="bg-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all max-h-screen overflow-y-auto"
+        >
+          <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center">
+            <i class="fas fa-plus-circle mr-3 text-blue-600"></i>Create New Slot
+          </h2>
+          <form
+            id="add-appointment_slots-form"
+            onsubmit="submitForm(event, '/appointment_slots/', 'add-appointment_slots-form', 'Slot')"
+          >
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                  <i class="fas fa-user-md mr-2 text-blue-600"></i>Doctor
+                </label>
+                <div class="relative">
+                  <input
+                    type="text"
+                    id="add-doctor-search"
+                    placeholder="Search doctor by name or specialty..."
+                    class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition"
+                    onkeyup="searchDoctors('add')"
+                    onfocus="showDoctorDropdown('add')"
+                  />
+                  <input
+                    type="hidden"
+                    name="doctor_id"
+                    id="add-doctor-select"
+                    required
+                  />
+                  <div
+                    id="add-doctor-dropdown"
+                    class="hidden absolute z-10 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                  >
+                    <!-- Doctor options will be inserted here -->
+                  </div>
+                </div>
+                <div
+                  id="add-selected-doctor"
+                  class="hidden mt-2 p-3 bg-blue-50 border-2 border-blue-200 rounded-lg"
+                >
+                  <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-600 text-sm font-semibold mb-1">Total Slots</p>
-                        <h3 class="text-4xl font-bold text-gray-800" id="total-slots-stat">0</h3>
+                      <p
+                        class="font-semibold text-gray-800"
+                        id="add-selected-doctor-name"
+                      ></p>
+                      <p
+                        class="text-sm text-gray-600"
+                        id="add-selected-doctor-specialty"
+                      ></p>
                     </div>
-                    <div class="bg-blue-100 rounded-full p-4">
-                        <i class="fas fa-calendar-alt text-3xl text-blue-600"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-green-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm font-semibold mb-1">Available</p>
-                        <h3 class="text-4xl font-bold text-green-600" id="available-slots-stat">0</h3>
-                    </div>
-                    <div class="bg-green-100 rounded-full p-4">
-                        <i class="fas fa-check-circle text-3xl text-green-600"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-red-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm font-semibold mb-1">Booked</p>
-                        <h3 class="text-4xl font-bold text-red-600" id="booked-slots-stat">0</h3>
-                    </div>
-                    <div class="bg-red-100 rounded-full p-4">
-                        <i class="fas fa-calendar-check text-3xl text-red-600"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-purple-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm font-semibold mb-1">Today's Slots</p>
-                        <h3 class="text-4xl font-bold text-purple-600" id="today-slots-stat">0</h3>
-                    </div>
-                    <div class="bg-purple-100 rounded-full p-4">
-                        <i class="fas fa-clock text-3xl text-purple-600"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Feedback Modal -->
-        <div id="feedback-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div id="modal-message" class="p-6 rounded-lg shadow-lg max-w-md w-full">
-                <button onclick="closeModal()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 w-full">Close</button>
-            </div>
-        </div>
-
-        <!-- Add Slot Modal -->
-        <div id="add-appointment_slots-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all max-h-screen overflow-y-auto">
-                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center">
-                    <i class="fas fa-plus-circle mr-3 text-blue-600"></i>Create New Slot
-                </h2>
-                <form id="add-appointment_slots-form" onsubmit="submitForm(event, '/appointment_slots/', 'add-appointment_slots-form', 'Slot')">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-gray-700 text-sm font-bold mb-2">
-                                <i class="fas fa-user-md mr-2 text-blue-600"></i>Doctor
-                            </label>
-                            <div class="relative">
-                                <input 
-                                    type="text" 
-                                    id="add-doctor-search" 
-                                    placeholder="Search doctor by name or specialty..."
-                                    class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition"
-                                    onkeyup="searchDoctors('add')"
-                                    onfocus="showDoctorDropdown('add')"
-                                >
-                                <input type="hidden" name="doctor_id" id="add-doctor-select" required>
-                                <div id="add-doctor-dropdown" class="hidden absolute z-10 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                    <!-- Doctor options will be inserted here -->
-                                </div>
-                            </div>
-                            <div id="add-selected-doctor" class="hidden mt-2 p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="font-semibold text-gray-800" id="add-selected-doctor-name"></p>
-                                        <p class="text-sm text-gray-600" id="add-selected-doctor-specialty"></p>
-                                    </div>
-                                    <button type="button" onclick="clearDoctorSelection('add')" class="text-red-600 hover:text-red-800">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-gray-700 text-sm font-bold mb-2">
-                                <i class="fas fa-calendar mr-2 text-purple-600"></i>Date
-                            </label>
-                            <input type="date" name="date" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition" required>
-                        </div>
-
-                        <div>
-                            <label class="block text-gray-700 text-sm font-bold mb-2">
-                                <i class="fas fa-clock mr-2 text-green-600"></i>Start Time
-                            </label>
-                            <input type="time" name="start_time" class="time-picker w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 transition" required>
-                        </div>
-
-                        <div>
-                            <label class="block text-gray-700 text-sm font-bold mb-2">
-                                <i class="fas fa-clock mr-2 text-orange-600"></i>End Time
-                            </label>
-                            <input type="time" name="end_time" class="time-picker w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition" required>
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label class="block text-gray-700 text-sm font-bold mb-2">
-                                <i class="fas fa-toggle-on mr-2 text-pink-600"></i>Availability Status
-                            </label>
-                            <select name="is_available" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 transition" required>
-                                <option value="true">Available</option>
-                                <option value="false">Not Available</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end space-x-3 mt-8">
-                        <button type="button" onclick="closeAddModal('appointment_slots')" class="bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-semibold">
-                            Cancel
-                        </button>
-                        <button type="submit" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition font-semibold shadow-lg">
-                            <i class="fas fa-save mr-2"></i>Create Slot
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Edit Slot Modal -->
-        <div id="edit-appointment_slots-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all max-h-screen overflow-y-auto">
-                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center">
-                    <i class="fas fa-edit mr-3 text-purple-600"></i>Edit Slot
-                </h2>
-                <form id="edit-appointment_slots-form" onsubmit="submitForm(event, '/appointment_slots/update', 'edit-appointment_slots-form', 'Slot')">
-                    <input type="hidden" name="slot_id" id="edit-appointment_slots-id">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-gray-700 text-sm font-bold mb-2">
-                                <i class="fas fa-user-md mr-2 text-blue-600"></i>Doctor
-                            </label>
-                            <div class="relative">
-                                <input 
-                                    type="text" 
-                                    id="edit-doctor-search" 
-                                    placeholder="Search doctor by name or specialty..."
-                                    class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition"
-                                    onkeyup="searchDoctors('edit')"
-                                    onfocus="showDoctorDropdown('edit')"
-                                >
-                                <input type="hidden" name="doctor_id" id="edit-appointment_slots-doctor-id" required>
-                                <div id="edit-doctor-dropdown" class="hidden absolute z-10 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                    <!-- Doctor options will be inserted here -->
-                                </div>
-                            </div>
-                            <div id="edit-selected-doctor" class="hidden mt-2 p-3 bg-purple-50 border-2 border-purple-200 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="font-semibold text-gray-800" id="edit-selected-doctor-name"></p>
-                                        <p class="text-sm text-gray-600" id="edit-selected-doctor-specialty"></p>
-                                    </div>
-                                    <button type="button" onclick="clearDoctorSelection('edit')" class="text-red-600 hover:text-red-800">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-gray-700 text-sm font-bold mb-2">
-                                <i class="fas fa-calendar mr-2 text-purple-600"></i>Date
-                            </label>
-                            <input type="date" name="date" id="edit-appointment_slots-date" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition" required>
-                        </div>
-
-                        <div>
-                            <label class="block text-gray-700 text-sm font-bold mb-2">
-                                <i class="fas fa-clock mr-2 text-green-600"></i>Start Time
-                            </label>
-                            <input type="time" name="start_time" id="edit-appointment_slots-start-time" class="time-picker w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 transition" required>
-                        </div>
-
-                        <div>
-                            <label class="block text-gray-700 text-sm font-bold mb-2">
-                                <i class="fas fa-clock mr-2 text-orange-600"></i>End Time
-                            </label>
-                            <input type="time" name="end_time" id="edit-appointment_slots-end-time" class="time-picker w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition" required>
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label class="block text-gray-700 text-sm font-bold mb-2">
-                                <i class="fas fa-toggle-on mr-2 text-pink-600"></i>Availability Status
-                            </label>
-                            <select name="is_available" id="edit-appointment_slots-is-available" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 transition" required>
-                                <option value="true">Available</option>
-                                <option value="false">Not Available</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end space-x-3 mt-8">
-                        <button type="button" onclick="closeEditModal('appointment_slots')" class="bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-semibold">
-                            Cancel
-                        </button>
-                        <button type="submit" class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-semibold shadow-lg">
-                            <i class="fas fa-save mr-2"></i>Update Slot
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Main Content Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-            <!-- Calendar Widget -->
-            <div class="lg:col-span-1 bg-white rounded-2xl shadow-xl p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">
-                        <i class="fas fa-calendar-alt mr-2 text-purple-600"></i>Calendar
-                    </h2>
-                    <div class="flex space-x-2">
-                        <button onclick="previousMonth()" class="bg-gray-200 hover:bg-gray-300 p-2 rounded-lg transition">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <button onclick="nextMonth()" class="bg-gray-200 hover:bg-gray-300 p-2 rounded-lg transition">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="text-center mb-4">
-                    <h3 id="current-month" class="text-xl font-bold text-gray-800"></h3>
-                </div>
-
-                <div id="calendar-grid" class="grid grid-cols-7 gap-2">
-                    <!-- Calendar will be generated here -->
-                </div>
-
-                <div class="mt-6 space-y-2">
-                    <div class="flex items-center text-sm">
-                        <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
-                        <span>Available Slots</span>
-                    </div>
-                    <div class="flex items-center text-sm">
-                        <div class="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
-                        <span>Partially Booked</span>
-                    </div>
-                    <div class="flex items-center text-sm">
-                        <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
-                        <span>Fully Booked</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Daily Timeline -->
-            <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl p-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">
-                        <i class="fas fa-clock mr-2 text-blue-600"></i>
-                        <span id="selected-date-display">Today's Timeline</span>
-                    </h2>
-                    <button onclick="openAddModal('appointment_slots')" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition font-semibold shadow-lg">
-                        <i class="fas fa-plus mr-2"></i>Add Slot
+                    <button
+                      type="button"
+                      onclick="clearDoctorSelection('add')"
+                      class="text-red-600 hover:text-red-800"
+                    >
+                      <i class="fas fa-times"></i>
                     </button>
+                  </div>
                 </div>
+              </div>
 
-                <div id="timeline-container" class="space-y-3 max-h-96 overflow-y-auto">
-                    <!-- Timeline slots will be inserted here -->
-                </div>
-            </div>
-        </div>
+              <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                  <i class="fas fa-calendar mr-2 text-purple-600"></i>Date
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition"
+                  required
+                />
+              </div>
 
-        <!-- Slots by Doctor Section -->
-        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <i class="fas fa-user-md mr-3 text-green-600"></i>Slots by Doctor
-            </h2>
+              <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                  <i class="fas fa-clock mr-2 text-green-600"></i>Start Time
+                </label>
+                <input
+                  type="time"
+                  name="start_time"
+                  class="time-picker w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 transition"
+                  required
+                />
+              </div>
 
-            <div class="mb-6">
-                <select id="doctor-filter" class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 transition text-lg" onchange="filterByDoctor()">
-                    <option value="">All Doctors</option>
+              <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                  <i class="fas fa-clock mr-2 text-orange-600"></i>End Time
+                </label>
+                <input
+                  type="time"
+                  name="end_time"
+                  class="time-picker w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition"
+                  required
+                />
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                  <i class="fas fa-toggle-on mr-2 text-pink-600"></i
+                  >Availability Status
+                </label>
+                <select
+                  name="is_available"
+                  class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 transition"
+                  required
+                >
+                  <option value="true">Available</option>
+                  <option value="false">Not Available</option>
                 </select>
+              </div>
             </div>
 
-            <div id="doctor-slots-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Doctor slot cards will be inserted here -->
+            <div class="flex justify-end space-x-3 mt-8">
+              <button
+                type="button"
+                onclick="closeAddModal('appointment_slots')"
+                class="bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition font-semibold shadow-lg"
+              >
+                <i class="fas fa-save mr-2"></i>Create Slot
+              </button>
             </div>
+          </form>
         </div>
+      </div>
 
-        <!-- Time Distribution Chart -->
-        <div class="bg-white rounded-2xl shadow-xl p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <i class="fas fa-chart-pie mr-3 text-pink-600"></i>Slot Distribution by Time
+      <!-- Edit Slot Modal -->
+      <div
+        id="edit-appointment_slots-modal"
+        class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50"
+      >
+        <div
+          class="bg-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all max-h-screen overflow-y-auto"
+        >
+          <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center">
+            <i class="fas fa-edit mr-3 text-purple-600"></i>Edit Slot
+          </h2>
+          <form
+            id="edit-appointment_slots-form"
+            onsubmit="submitForm(event, '/appointment_slots/update', 'edit-appointment_slots-form', 'Slot')"
+          >
+            <input
+              type="hidden"
+              name="slot_id"
+              id="edit-appointment_slots-id"
+            />
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                  <i class="fas fa-user-md mr-2 text-blue-600"></i>Doctor
+                </label>
+                <div class="relative">
+                  <input
+                    type="text"
+                    id="edit-doctor-search"
+                    placeholder="Search doctor by name or specialty..."
+                    class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition"
+                    onkeyup="searchDoctors('edit')"
+                    onfocus="showDoctorDropdown('edit')"
+                  />
+                  <input
+                    type="hidden"
+                    name="doctor_id"
+                    id="edit-appointment_slots-doctor-id"
+                    required
+                  />
+                  <div
+                    id="edit-doctor-dropdown"
+                    class="hidden absolute z-10 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                  >
+                    <!-- Doctor options will be inserted here -->
+                  </div>
+                </div>
+                <div
+                  id="edit-selected-doctor"
+                  class="hidden mt-2 p-3 bg-purple-50 border-2 border-purple-200 rounded-lg"
+                >
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p
+                        class="font-semibold text-gray-800"
+                        id="edit-selected-doctor-name"
+                      ></p>
+                      <p
+                        class="text-sm text-gray-600"
+                        id="edit-selected-doctor-specialty"
+                      ></p>
+                    </div>
+                    <button
+                      type="button"
+                      onclick="clearDoctorSelection('edit')"
+                      class="text-red-600 hover:text-red-800"
+                    >
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                  <i class="fas fa-calendar mr-2 text-purple-600"></i>Date
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  id="edit-appointment_slots-date"
+                  class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition"
+                  required
+                />
+              </div>
+
+              <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                  <i class="fas fa-clock mr-2 text-green-600"></i>Start Time
+                </label>
+                <input
+                  type="time"
+                  name="start_time"
+                  id="edit-appointment_slots-start-time"
+                  class="time-picker w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 transition"
+                  required
+                />
+              </div>
+
+              <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                  <i class="fas fa-clock mr-2 text-orange-600"></i>End Time
+                </label>
+                <input
+                  type="time"
+                  name="end_time"
+                  id="edit-appointment_slots-end-time"
+                  class="time-picker w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 transition"
+                  required
+                />
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                  <i class="fas fa-toggle-on mr-2 text-pink-600"></i
+                  >Availability Status
+                </label>
+                <select
+                  name="is_available"
+                  id="edit-appointment_slots-is-available"
+                  class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 transition"
+                  required
+                >
+                  <option value="true">Available</option>
+                  <option value="false">Not Available</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 mt-8">
+              <button
+                type="button"
+                onclick="closeEditModal('appointment_slots')"
+                class="bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-semibold shadow-lg"
+              >
+                <i class="fas fa-save mr-2"></i>Update Slot
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Main Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Calendar Widget -->
+        <div class="lg:col-span-1 bg-white rounded-2xl shadow-xl p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">
+              <i class="fas fa-calendar-alt mr-2 text-purple-600"></i>Calendar
             </h2>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="text-center p-6 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-xl">
-                    <i class="fas fa-sun text-5xl text-yellow-600 mb-4"></i>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Morning</h3>
-                    <p class="text-gray-600 mb-2">6:00 AM - 12:00 PM</p>
-                    <div class="text-4xl font-bold text-yellow-600" id="morning-slots">0</div>
-                    <p class="text-sm text-gray-600">slots</p>
-                </div>
-
-                <div class="text-center p-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl">
-                    <i class="fas fa-cloud-sun text-5xl text-blue-600 mb-4"></i>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Afternoon</h3>
-                    <p class="text-gray-600 mb-2">12:00 PM - 6:00 PM</p>
-                    <div class="text-4xl font-bold text-blue-600" id="afternoon-slots">0</div>
-                    <p class="text-sm text-gray-600">slots</p>
-                </div>
-
-                <div class="text-center p-6 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl">
-                    <i class="fas fa-moon text-5xl text-indigo-600 mb-4"></i>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Evening</h3>
-                    <p class="text-gray-600 mb-2">6:00 PM - 11:59 PM</p>
-                    <div class="text-4xl font-bold text-indigo-600" id="evening-slots">0</div>
-                    <p class="text-sm text-gray-600">slots</p>
-                </div>
+            <div class="flex space-x-2">
+              <button
+                onclick="previousMonth()"
+                class="bg-gray-200 hover:bg-gray-300 p-2 rounded-lg transition"
+              >
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <button
+                onclick="nextMonth()"
+                class="bg-gray-200 hover:bg-gray-300 p-2 rounded-lg transition"
+              >
+                <i class="fas fa-chevron-right"></i>
+              </button>
             </div>
+          </div>
+
+          <div class="text-center mb-4">
+            <h3 id="current-month" class="text-xl font-bold text-gray-800"></h3>
+          </div>
+
+          <div id="calendar-grid" class="grid grid-cols-7 gap-2">
+            <!-- Calendar will be generated here -->
+          </div>
+
+          <div class="mt-6 space-y-2">
+            <div class="flex items-center text-sm">
+              <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+              <span>Available Slots</span>
+            </div>
+            <div class="flex items-center text-sm">
+              <div class="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
+              <span>Partially Booked</span>
+            </div>
+            <div class="flex items-center text-sm">
+              <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
+              <span>Fully Booked</span>
+            </div>
+          </div>
         </div>
+
+        <!-- Daily Timeline -->
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">
+              <i class="fas fa-clock mr-2 text-blue-600"></i>
+              <span id="selected-date-display">Today's Timeline</span>
+            </h2>
+            <button
+              onclick="openAddModal('appointment_slots')"
+              class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition font-semibold shadow-lg"
+            >
+              <i class="fas fa-plus mr-2"></i>Add Slot
+            </button>
+          </div>
+
+          <div
+            id="timeline-container"
+            class="space-y-3 max-h-96 overflow-y-auto"
+          >
+            <!-- Timeline slots will be inserted here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Slots by Doctor Section -->
+      <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+          <i class="fas fa-user-md mr-3 text-green-600"></i>Slots by Doctor
+        </h2>
+
+        <div class="mb-6">
+          <select
+            id="doctor-filter"
+            class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 transition text-lg"
+            onchange="filterByDoctor()"
+          >
+            <option value="">All Doctors</option>
+          </select>
+        </div>
+
+        <div
+          id="doctor-slots-grid"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          <!-- Doctor slot cards will be inserted here -->
+        </div>
+      </div>
+
+      <!-- Time Distribution Chart -->
+      <div class="bg-white rounded-2xl shadow-xl p-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+          <i class="fas fa-chart-pie mr-3 text-pink-600"></i>Slot Distribution
+          by Time
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div
+            class="text-center p-6 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-xl"
+          >
+            <i class="fas fa-sun text-5xl text-yellow-600 mb-4"></i>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Morning</h3>
+            <p class="text-gray-600 mb-2">6:00 AM - 12:00 PM</p>
+            <div class="text-4xl font-bold text-yellow-600" id="morning-slots">
+              0
+            </div>
+            <p class="text-sm text-gray-600">slots</p>
+          </div>
+
+          <div
+            class="text-center p-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl"
+          >
+            <i class="fas fa-cloud-sun text-5xl text-blue-600 mb-4"></i>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Afternoon</h3>
+            <p class="text-gray-600 mb-2">12:00 PM - 6:00 PM</p>
+            <div class="text-4xl font-bold text-blue-600" id="afternoon-slots">
+              0
+            </div>
+            <p class="text-sm text-gray-600">slots</p>
+          </div>
+
+          <div
+            class="text-center p-6 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl"
+          >
+            <i class="fas fa-moon text-5xl text-indigo-600 mb-4"></i>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Evening</h3>
+            <p class="text-gray-600 mb-2">6:00 PM - 11:59 PM</p>
+            <div class="text-4xl font-bold text-indigo-600" id="evening-slots">
+              0
+            </div>
+            <p class="text-sm text-gray-600">slots</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
-        let allSlots = [];
-        let allDoctors = [];
-        let currentDate = new Date();
-        let selectedDate = new Date();
+      let allSlots = [];
+      let allDoctors = [];
+      let currentDate = new Date();
+      let selectedDate = new Date();
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', async () => {
-            await loadDoctors();
-            await loadSlots();
-            generateCalendar();
-            updateTimeline();
-            updateTimeDistribution();
-        });
+      // Format date as YYYY-MM-DD in local timezone
+      function formatLocalDate(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+          2,
+          "0"
+        )}-${String(date.getDate()).padStart(2, "0")}`;
+      }
 
-        // Load doctors
-        async function loadDoctors() {
-            try {
-                const response = await fetch('/doctors/list');
-                allDoctors = await response.json();
-                
-                console.log('Loaded doctors:', allDoctors); // Debug log
-                
-                // Populate filter select
-                const filterSelect = document.getElementById('doctor-filter');
-                filterSelect.innerHTML = '<option value="">All Doctors</option>';
-                allDoctors.forEach(doctor => {
-                    const option = document.createElement('option');
-                    option.value = doctor.id;
-                    option.textContent = `${doctor.name} - ${doctor.specialty}`;
-                    filterSelect.appendChild(option);
-                });
+      // Load doctors
+      async function loadDoctors() {
+        try {
+          const response = await fetch("/doctors/list");
+          allDoctors = await response.json();
 
-                // Initialize searchable dropdowns
-                populateDoctorDropdowns();
-            } catch (error) {
-                console.error('Error loading doctors:', error);
-            }
+          const filter = document.getElementById("doctor-filter");
+          filter.innerHTML =
+            '<option value="">All Doctors</option>' +
+            allDoctors
+              .map(
+                (doctor) =>
+                  `<option value="${doctor.id}">${doctor.name} (${doctor.specialty})</option>`
+              )
+              .join("");
+        } catch (error) {
+          console.error("Error loading doctors:", error);
+        }
+      }
+
+      // Search doctors
+      function searchDoctors(type) {
+        const searchInput = document
+          .getElementById(`${type}-doctor-search`)
+          .value.toLowerCase();
+        const dropdown = document.getElementById(`${type}-doctor-dropdown`);
+
+        dropdown.innerHTML = allDoctors
+          .filter(
+            (doctor) =>
+              doctor.name.toLowerCase().includes(searchInput) ||
+              doctor.specialty.toLowerCase().includes(searchInput)
+          )
+          .map(
+            (doctor) => `
+            <div 
+                class="p-3 hover:bg-blue-50 cursor-pointer flex items-center justify-between"
+                onclick="selectDoctor(${doctor.id}, '${doctor.name}', '${doctor.specialty}', '${type}')"
+            >
+                <div>
+                    <p class="font-semibold text-gray-800">${doctor.name}</p>
+                    <p class="text-sm text-gray-600">${doctor.specialty}</p>
+                </div>
+            </div>
+        `
+          )
+          .join("");
+
+        dropdown.classList.remove("hidden");
+      }
+
+      // Select doctor
+      function selectDoctor(id, name, specialty, type) {
+        document.getElementById(
+          `${
+            type === "add"
+              ? "add-doctor-select"
+              : "edit-appointment_slots-doctor-id"
+          }`
+        ).value = id;
+        document.getElementById(
+          `${type}-doctor-search`
+        ).value = `${name} (${specialty})`;
+        document.getElementById(`${type}-selected-doctor-name`).textContent =
+          name;
+        document.getElementById(
+          `${type}-selected-doctor-specialty`
+        ).textContent = specialty;
+        document
+          .getElementById(`${type}-selected-doctor`)
+          .classList.remove("hidden");
+        document
+          .getElementById(`${type}-doctor-dropdown`)
+          .classList.add("hidden");
+      }
+
+      // Show doctor dropdown
+      function showDoctorDropdown(type) {
+        searchDoctors(type);
+        document
+          .getElementById(`${type}-doctor-dropdown`)
+          .classList.remove("hidden");
+      }
+
+      // Clear doctor selection
+      function clearDoctorSelection(type) {
+        document.getElementById(
+          `${
+            type === "add"
+              ? "add-doctor-select"
+              : "edit-appointment_slots-doctor-id"
+          }`
+        ).value = "";
+        document.getElementById(`${type}-doctor-search`).value = "";
+        document
+          .getElementById(`${type}-selected-doctor`)
+          .classList.add("hidden");
+      }
+
+      // Close dropdowns when clicking outside
+      document.addEventListener("click", function (event) {
+        const addDropdown = document.getElementById("add-doctor-dropdown");
+        const addSearch = document.getElementById("add-doctor-search");
+        const editDropdown = document.getElementById("edit-doctor-dropdown");
+        const editSearch = document.getElementById("edit-doctor-search");
+
+        if (
+          addDropdown &&
+          !addDropdown.contains(event.target) &&
+          event.target !== addSearch
+        ) {
+          addDropdown.classList.add("hidden");
         }
 
-        // Populate searchable doctor dropdowns
-        function populateDoctorDropdowns() {
-            const addDropdown = document.getElementById('add-doctor-dropdown');
-            const editDropdown = document.getElementById('edit-doctor-dropdown');
-            
-            const specialtyColors = {
-                'Cardiology': 'bg-red-50 border-red-200',
-                'Dermatology': 'bg-pink-50 border-pink-200',
-                'Neurology': 'bg-purple-50 border-purple-200',
-                'Orthopedics': 'bg-blue-50 border-blue-200',
-                'Pediatrics': 'bg-green-50 border-green-200',
-                'Psychiatry': 'bg-indigo-50 border-indigo-200',
-                'Radiology': 'bg-yellow-50 border-yellow-200',
-                'Surgery': 'bg-orange-50 border-orange-200'
-            };
+        if (
+          editDropdown &&
+          !editDropdown.contains(event.target) &&
+          event.target !== editSearch
+        ) {
+          editDropdown.classList.add("hidden");
+        }
+      });
 
-            const doctorHTML = allDoctors.map(doctor => {
-                const colorClass = specialtyColors[doctor.specialty] || 'bg-gray-50 border-gray-200';
-                return `
-                    <div class="p-3 hover:bg-blue-100 cursor-pointer border-b transition doctor-option" 
-                         data-doctor-id="${doctor.id}" 
-                         data-doctor-name="${doctor.name}"
-                         data-doctor-specialty="${doctor.specialty}">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-3">
-                                <div class="${colorClass} rounded-full w-10 h-10 flex items-center justify-center border-2">
-                                    <i class="fas fa-user-md text-gray-700"></i>
-                                </div>
-                                <div>
-                                    <p class="font-semibold text-gray-800">${doctor.name}</p>
-                                    <p class="text-sm text-gray-600">${doctor.specialty}</p>
-                                </div>
+      // Load slots
+      async function loadSlots() {
+        try {
+          const response = await fetch("/appointment_slots/list");
+          allSlots = await response.json();
+
+          updateStatistics();
+          updateDoctorSlots();
+        } catch (error) {
+          console.error("Error loading slots:", error);
+        }
+      }
+
+      // Update statistics
+      function updateStatistics() {
+        document.getElementById("total-slots-stat").textContent =
+          allSlots.length;
+
+        const available = allSlots.filter((s) => s.is_available).length;
+        const booked = allSlots.length - available;
+
+        document.getElementById("available-slots-stat").textContent = available;
+        document.getElementById("booked-slots-stat").textContent = booked;
+
+        const today = formatLocalDate(new Date());
+        const todaySlots = allSlots.filter((s) => s.date === today).length;
+        document.getElementById("today-slots-stat").textContent = todaySlots;
+      }
+
+      // Generate calendar
+      function generateCalendar() {
+        const calendar = document.getElementById("calendar-grid");
+        const monthDisplay = document.getElementById("current-month");
+
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        monthDisplay.textContent = currentDate.toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        });
+
+        calendar.innerHTML = "";
+
+        // Day headers
+        const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        daysOfWeek.forEach((day) => {
+          const header = document.createElement("div");
+          header.className = "text-center text-xs font-bold text-gray-600 p-2";
+          header.textContent = day;
+          calendar.appendChild(header);
+        });
+
+        // Get first day of month and number of days
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDay = firstDay.getDay();
+        const numDays = lastDay.getDate();
+
+        // Empty cells before first day
+        for (let i = 0; i < startDay; i++) {
+          calendar.appendChild(document.createElement("div"));
+        }
+
+        // Calendar days
+        const today = new Date();
+        for (let day = 1; day <= numDays; day++) {
+          const dayCell = document.createElement("div");
+          const cellDate = new Date(year, month, day);
+          const dateStr = formatLocalDate(cellDate);
+
+          // Check slot availability for this date
+          const daySlots = allSlots.filter((s) => s.date === dateStr);
+          const availableCount = daySlots.filter((s) => s.is_available).length;
+
+          let bgColor = "bg-gray-100 text-gray-800";
+          if (daySlots.length > 0) {
+            if (availableCount === daySlots.length) {
+              bgColor = "bg-green-100 text-green-800";
+            } else if (availableCount > 0) {
+              bgColor = "bg-yellow-100 text-yellow-800";
+            } else {
+              bgColor = "bg-red-100 text-red-800";
+            }
+          }
+
+          const isToday = cellDate.toDateString() === today.toDateString();
+          const isSelected =
+            cellDate.toDateString() === selectedDate.toDateString();
+
+          dayCell.className = `calendar-day text-center p-3 rounded-lg ${bgColor} ${
+            isToday ? "today" : ""
+          } ${isSelected ? "selected" : ""}`;
+          dayCell.textContent = day;
+          dayCell.onclick = () => selectDate(cellDate);
+
+          calendar.appendChild(dayCell);
+        }
+      }
+
+      // Navigate months
+      function previousMonth() {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        generateCalendar();
+      }
+
+      function nextMonth() {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        generateCalendar();
+      }
+
+      // Select date
+      function selectDate(date) {
+        selectedDate = date;
+        generateCalendar();
+        updateTimeline();
+
+        const dateStr = date.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        document.getElementById(
+          "selected-date-display"
+        ).textContent = `Timeline for ${dateStr}`;
+      }
+
+      // Update timeline
+      function updateTimeline() {
+        const timeline = document.getElementById("timeline-container");
+        const dateStr = formatLocalDate(selectedDate);
+        const daySlots = allSlots
+          .filter((s) => s.date === dateStr)
+          .sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+        if (daySlots.length === 0) {
+          timeline.innerHTML = `
+            <div class="text-center py-12">
+                <i class="fas fa-calendar-times text-6xl text-gray-300 mb-4"></i>
+                <p class="text-xl text-gray-600">No slots scheduled for this date</p>
+                <button onclick="openAddModal('appointment_slots')" class="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-plus mr-2"></i>Add First Slot
+                </button>
+            </div>
+        `;
+          return;
+        }
+
+        timeline.innerHTML = daySlots
+          .map((slot) => {
+            const doctor = allDoctors.find((d) => d.id === slot.doctor_id);
+            const statusClass = slot.is_available ? "available" : "booked";
+            const statusBg = slot.is_available
+              ? "bg-green-50 border-green-200"
+              : "bg-red-50 border-red-200";
+            const statusText = slot.is_available ? "Available" : "Booked";
+            const statusIcon = slot.is_available
+              ? "fa-check-circle text-green-600"
+              : "fa-times-circle text-red-600";
+
+            return `
+            <div class="timeline-slot ${statusClass} ${statusBg} border-2 rounded-lg hover:shadow-md transition">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-clock text-2xl text-blue-600 mr-3"></i>
+                            <div>
+                                <span class="text-xl font-bold text-gray-800">${slot.start_time.substring(
+                                  0,
+                                  5
+                                )} - ${slot.end_time.substring(0, 5)}</span>
+                                <span class="ml-3 px-3 py-1 rounded-full text-sm font-semibold ${
+                                  slot.is_available
+                                    ? "bg-green-200 text-green-800"
+                                    : "bg-red-200 text-red-800"
+                                }">
+                                    <i class="fas ${statusIcon} mr-1"></i>${statusText}
+                                </span>
                             </div>
-                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">ID: ${doctor.id}</span>
+                        </div>
+                        <div class="flex items-center text-gray-700">
+                            <i class="fas fa-user-md mr-2"></i>
+                            <span class="font-semibold">${
+                              doctor ? doctor.name : "Unknown Doctor"
+                            }</span>
+                            ${
+                              doctor
+                                ? `<span class="ml-2 text-sm text-gray-600">(${doctor.specialty})</span>`
+                                : ""
+                            }
                         </div>
                     </div>
-                `;
-            }).join('');
-
-            addDropdown.innerHTML = doctorHTML;
-            editDropdown.innerHTML = doctorHTML;
-
-            // Add click handlers for add modal
-            document.querySelectorAll('#add-doctor-dropdown .doctor-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    selectDoctor('add', this.dataset.doctorId, this.dataset.doctorName, this.dataset.doctorSpecialty);
-                });
-            });
-
-            // Add click handlers for edit modal
-            document.querySelectorAll('#edit-doctor-dropdown .doctor-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    selectDoctor('edit', this.dataset.doctorId, this.dataset.doctorName, this.dataset.doctorSpecialty);
-                });
-            });
-        }
-
-        // Show doctor dropdown
-        function showDoctorDropdown(type) {
-            document.getElementById(`${type}-doctor-dropdown`).classList.remove('hidden');
-        }
-
-        // Search doctors
-        function searchDoctors(type) {
-            const searchInput = document.getElementById(`${type}-doctor-search`);
-            const dropdown = document.getElementById(`${type}-doctor-dropdown`);
-            const searchTerm = searchInput.value.toLowerCase();
-
-            const options = dropdown.querySelectorAll('.doctor-option');
-            let visibleCount = 0;
-
-            options.forEach(option => {
-                const name = option.dataset.doctorName.toLowerCase();
-                const specialty = option.dataset.doctorSpecialty.toLowerCase();
-
-                if (name.includes(searchTerm) || specialty.includes(searchTerm)) {
-                    option.classList.remove('hidden');
-                    visibleCount++;
-                } else {
-                    option.classList.add('hidden');
-                }
-            });
-
-            dropdown.classList.remove('hidden');
-
-            if (visibleCount === 0) {
-                dropdown.innerHTML = '<div class="p-3 text-center text-gray-600">No doctors found</div>';
-            } else if (searchTerm === '') {
-                populateDoctorDropdowns();
-            }
-        }
-
-        // Select doctor
-        function selectDoctor(type, doctorId, doctorName, doctorSpecialty) {
-            // Set hidden input value
-            document.getElementById(`${type === 'add' ? 'add-doctor-select' : 'edit-appointment_slots-doctor-id'}`).value = doctorId;
-            
-            // Update search input
-            document.getElementById(`${type}-doctor-search`).value = doctorName;
-            
-            // Show selected doctor card
-            document.getElementById(`${type}-selected-doctor`).classList.remove('hidden');
-            document.getElementById(`${type}-selected-doctor-name`).textContent = doctorName;
-            document.getElementById(`${type}-selected-doctor-specialty`).textContent = doctorSpecialty;
-            
-            // Hide dropdown
-            document.getElementById(`${type}-doctor-dropdown`).classList.add('hidden');
-        }
-
-        // Clear doctor selection
-        function clearDoctorSelection(type) {
-            document.getElementById(`${type === 'add' ? 'add-doctor-select' : 'edit-appointment_slots-doctor-id'}`).value = '';
-            document.getElementById(`${type}-doctor-search`).value = '';
-            document.getElementById(`${type}-selected-doctor`).classList.add('hidden');
-        }
-
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function(event) {
-            const addDropdown = document.getElementById('add-doctor-dropdown');
-            const addSearch = document.getElementById('add-doctor-search');
-            const editDropdown = document.getElementById('edit-doctor-dropdown');
-            const editSearch = document.getElementById('edit-doctor-search');
-
-            if (addDropdown && !addDropdown.contains(event.target) && event.target !== addSearch) {
-                addDropdown.classList.add('hidden');
-            }
-
-            if (editDropdown && !editDropdown.contains(event.target) && event.target !== editSearch) {
-                editDropdown.classList.add('hidden');
-            }
-        });
-
-        // Load slots
-        async function loadSlots() {
-            try {
-                const response = await fetch('/appointment_slots/list');
-                allSlots = await response.json();
-                
-                updateStatistics();
-                updateDoctorSlots();
-            } catch (error) {
-                console.error('Error loading slots:', error);
-            }
-        }
-
-        // Update statistics
-        function updateStatistics() {
-            document.getElementById('total-slots-stat').textContent = allSlots.length;
-            
-            const available = allSlots.filter(s => s.is_available).length;
-            const booked = allSlots.length - available;
-            
-            document.getElementById('available-slots-stat').textContent = available;
-            document.getElementById('booked-slots-stat').textContent = booked;
-            
-            const today = new Date().toISOString().split('T')[0];
-            const todaySlots = allSlots.filter(s => s.date === today).length;
-            document.getElementById('today-slots-stat').textContent = todaySlots;
-        }
-
-        // Generate calendar
-        function generateCalendar() {
-            const calendar = document.getElementById('calendar-grid');
-            const monthDisplay = document.getElementById('current-month');
-            
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            
-            monthDisplay.textContent = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            
-            calendar.innerHTML = '';
-            
-            // Day headers
-            const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            daysOfWeek.forEach(day => {
-                const header = document.createElement('div');
-                header.className = 'text-center text-xs font-bold text-gray-600 p-2';
-                header.textContent = day;
-                calendar.appendChild(header);
-            });
-            
-            // Get first day of month and number of days
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            const startDay = firstDay.getDay();
-            const numDays = lastDay.getDate();
-            
-            // Empty cells before first day
-            for (let i = 0; i < startDay; i++) {
-                calendar.appendChild(document.createElement('div'));
-            }
-            
-            // Calendar days
-            const today = new Date();
-            for (let day = 1; day <= numDays; day++) {
-                const dayCell = document.createElement('div');
-                const cellDate = new Date(year, month, day);
-                const dateStr = cellDate.toISOString().split('T')[0];
-                
-                // Check slot availability for this date
-                const daySlots = allSlots.filter(s => s.date === dateStr);
-                const availableCount = daySlots.filter(s => s.is_available).length;
-                
-                let bgColor = 'bg-gray-100 text-gray-800';
-                if (daySlots.length > 0) {
-                    if (availableCount === daySlots.length) {
-                        bgColor = 'bg-green-100 text-green-800';
-                    } else if (availableCount > 0) {
-                        bgColor = 'bg-yellow-100 text-yellow-800';
-                    } else {
-                        bgColor = 'bg-red-100 text-red-800';
-                    }
-                }
-                
-                const isToday = cellDate.toDateString() === today.toDateString();
-                const isSelected = cellDate.toDateString() === selectedDate.toDateString();
-                
-                dayCell.className = `calendar-day text-center p-3 rounded-lg ${bgColor} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`;
-                dayCell.textContent = day;
-                dayCell.onclick = () => selectDate(cellDate);
-                
-                calendar.appendChild(dayCell);
-            }
-        }
-
-        // Navigate months
-        function previousMonth() {
-            currentDate.setMonth(currentDate.getMonth() - 1);
-            generateCalendar();
-        }
-
-        function nextMonth() {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            generateCalendar();
-        }
-
-        // Select date
-        function selectDate(date) {
-            selectedDate = date;
-            generateCalendar();
-            updateTimeline();
-            
-            const dateStr = date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            document.getElementById('selected-date-display').textContent = `Timeline for ${dateStr}`;
-        }
-
-        // Update timeline
-        function updateTimeline() {
-            const timeline = document.getElementById('timeline-container');
-            const dateStr = selectedDate.toISOString().split('T')[0];
-            const daySlots = allSlots.filter(s => s.date === dateStr).sort((a, b) => a.start_time.localeCompare(b.start_time));
-            
-            if (daySlots.length === 0) {
-                timeline.innerHTML = `
-                    <div class="text-center py-12">
-                        <i class="fas fa-calendar-times text-6xl text-gray-300 mb-4"></i>
-                        <p class="text-xl text-gray-600">No slots scheduled for this date</p>
-                        <button onclick="openAddModal('appointment_slots')" class="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
-                            <i class="fas fa-plus mr-2"></i>Add First Slot
+                    <div class="flex space-x-2">
+                        <button onclick="openEditModal('appointment_slots', ${
+                          slot.id
+                        }, ${slot.doctor_id}, '${slot.date}', '${
+              slot.start_time
+            }', '${slot.end_time}', ${
+              slot.is_available
+            })" class="bg-blue-100 text-blue-600 p-3 rounded-lg hover:bg-blue-200 transition">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteEntity(${
+                          slot.id
+                        }, 'Slot', '/appointment_slots/delete')" class="bg-red-100 text-red-600 p-3 rounded-lg hover:bg-red-200 transition">
+                            <i class="fas fa-trash"></i>
                         </button>
                     </div>
-                `;
-                return;
-            }
-            
-            timeline.innerHTML = daySlots.map(slot => {
-                const doctor = allDoctors.find(d => d.id === slot.doctor_id);
-                const statusClass = slot.is_available ? 'available' : 'booked';
-                const statusBg = slot.is_available ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
-                const statusText = slot.is_available ? 'Available' : 'Booked';
-                const statusIcon = slot.is_available ? 'fa-check-circle text-green-600' : 'fa-times-circle text-red-600';
+                </div>
+            </div>
+        `;
+          })
+          .join("");
+      }
+
+      // Update doctor slots
+      function updateDoctorSlots() {
+        const container = document.getElementById("doctor-slots-grid");
+
+        const doctorSlots = {};
+        allDoctors.forEach((doctor) => {
+          const slots = allSlots.filter((s) => s.doctor_id === doctor.id);
+          const available = slots.filter((s) => s.is_available).length;
+          doctorSlots[doctor.id] = {
+            doctor: doctor,
+            total: slots.length,
+            available: available,
+            booked: slots.length - available,
+          };
+        });
+
+        const specialtyColors = {
+          Cardiology: "from-red-500 to-pink-500",
+          Dermatology: "from-pink-500 to-rose-500",
+          Neurology: "from-purple-500 to-indigo-500",
+          Orthopedics: "from-blue-500 to-cyan-500",
+          Pediatrics: "from-green-500 to-emerald-500",
+          Psychiatry: "from-indigo-500 to-purple-500",
+          Radiology: "from-yellow-500 to-orange-500",
+          Surgery: "from-orange-500 to-red-500",
+        };
+
+        container.innerHTML = Object.values(doctorSlots)
+          .map((data) => {
+            const gradient =
+              specialtyColors[data.doctor.specialty] ||
+              "from-gray-500 to-gray-600";
+            const utilization =
+              data.total > 0
+                ? ((data.booked / data.total) * 100).toFixed(0)
+                : 0;
+
+            return `
+            <div class="slot-card bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                <div class="bg-gradient-to-r ${gradient} p-4 text-white">
+                    <h3 class="text-lg font-bold mb-1">${data.doctor.name}</h3>
+                    <p class="text-sm opacity-90">${data.doctor.specialty}</p>
+                </div>
                 
-                return `
-                    <div class="timeline-slot ${statusClass} ${statusBg} border-2 rounded-lg hover:shadow-md transition">
-                        <div class="flex items-center justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center mb-2">
-                                    <i class="fas fa-clock text-2xl text-blue-600 mr-3"></i>
-                                    <div>
-                                        <span class="text-xl font-bold text-gray-800">${slot.start_time.substring(0, 5)} - ${slot.end_time.substring(0, 5)}</span>
-                                        <span class="ml-3 px-3 py-1 rounded-full text-sm font-semibold ${slot.is_available ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">
-                                            <i class="fas ${statusIcon} mr-1"></i>${statusText}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center text-gray-700">
-                                    <i class="fas fa-user-md mr-2"></i>
-                                    <span class="font-semibold">${doctor ? doctor.name : 'Unknown Doctor'}</span>
-                                    ${doctor ? `<span class="ml-2 text-sm text-gray-600">(${doctor.specialty})</span>` : ''}
-                                </div>
-                            </div>
-                            <div class="flex space-x-2">
-                                <button onclick="openEditModal('appointment_slots', ${slot.id}, ${slot.doctor_id}, '${slot.date}', '${slot.start_time}', '${slot.end_time}', ${slot.is_available})" class="bg-blue-100 text-blue-600 p-3 rounded-lg hover:bg-blue-200 transition">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="deleteEntity(${slot.id}, 'Slot', '/appointment_slots/delete')" class="bg-red-100 text-red-600 p-3 rounded-lg hover:bg-red-200 transition">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
+                <div class="p-4">
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-blue-600">${data.total}</div>
+                            <div class="text-xs text-gray-600">Total</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600">${data.available}</div>
+                            <div class="text-xs text-gray-600">Available</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-red-600">${data.booked}</div>
+                            <div class="text-xs text-gray-600">Booked</div>
                         </div>
                     </div>
-                `;
-            }).join('');
-        }
-
-        // Update doctor slots
-        function updateDoctorSlots() {
-            const container = document.getElementById('doctor-slots-grid');
-            
-            const doctorSlots = {};
-            allDoctors.forEach(doctor => {
-                const slots = allSlots.filter(s => s.doctor_id === doctor.id);
-                const available = slots.filter(s => s.is_available).length;
-                doctorSlots[doctor.id] = {
-                    doctor: doctor,
-                    total: slots.length,
-                    available: available,
-                    booked: slots.length - available
-                };
-            });
-            
-            const specialtyColors = {
-                'Cardiology': 'from-red-500 to-pink-500',
-                'Dermatology': 'from-pink-500 to-rose-500',
-                'Neurology': 'from-purple-500 to-indigo-500',
-                'Orthopedics': 'from-blue-500 to-cyan-500',
-                'Pediatrics': 'from-green-500 to-emerald-500',
-                'Psychiatry': 'from-indigo-500 to-purple-500',
-                'Radiology': 'from-yellow-500 to-orange-500',
-                'Surgery': 'from-orange-500 to-red-500'
-            };
-            
-            container.innerHTML = Object.values(doctorSlots).map(data => {
-                const gradient = specialtyColors[data.doctor.specialty] || 'from-gray-500 to-gray-600';
-                const utilization = data.total > 0 ? ((data.booked / data.total) * 100).toFixed(0) : 0;
-                
-                return `
-                    <div class="slot-card bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-                        <div class="bg-gradient-to-r ${gradient} p-4 text-white">
-                            <h3 class="text-lg font-bold mb-1">${data.doctor.name}</h3>
-                            <p class="text-sm opacity-90">${data.doctor.specialty}</p>
+                    
+                    <div class="mb-3">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-gray-600">Utilization</span>
+                            <span class="font-semibold text-gray-800">${utilization}%</span>
                         </div>
-                        
-                        <div class="p-4">
-                            <div class="grid grid-cols-3 gap-2 mb-4">
-                                <div class="text-center">
-                                    <div class="text-2xl font-bold text-blue-600">${data.total}</div>
-                                    <div class="text-xs text-gray-600">Total</div>
-                                </div>
-                                <div class="text-center">
-                                    <div class="text-2xl font-bold text-green-600">${data.available}</div>
-                                    <div class="text-xs text-gray-600">Available</div>
-                                </div>
-                                <div class="text-center">
-                                    <div class="text-2xl font-bold text-red-600">${data.booked}</div>
-                                    <div class="text-xs text-gray-600">Booked</div>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span class="text-gray-600">Utilization</span>
-                                    <span class="font-semibold text-gray-800">${utilization}%</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="bg-gradient-to-r ${gradient} h-2 rounded-full transition-all" style="width: ${utilization}%"></div>
-                                </div>
-                            </div>
-                            
-                            <button onclick="filterByDoctor(${data.doctor.id})" class="w-full bg-gradient-to-r ${gradient} text-white py-2 rounded-lg hover:opacity-90 transition font-semibold text-sm">
-                                <i class="fas fa-eye mr-2"></i>View All Slots
-                            </button>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-gradient-to-r ${gradient} h-2 rounded-full transition-all" style="width: ${utilization}%"></div>
                         </div>
                     </div>
-                `;
-            }).join('');
+                    
+                    <button onclick="filterByDoctor(${data.doctor.id})" class="w-full bg-gradient-to-r ${gradient} text-white py-2 rounded-lg hover:opacity-90 transition font-semibold text-sm">
+                        <i class="fas fa-eye mr-2"></i>View All Slots
+                    </button>
+                </div>
+            </div>
+        `;
+          })
+          .join("");
+      }
+
+      // Filter by doctor
+      function filterByDoctor(doctorId) {
+        if (doctorId) {
+          document.getElementById("doctor-filter").value = doctorId;
+        } else {
+          doctorId = document.getElementById("doctor-filter").value;
         }
 
-        // Filter by doctor
-        function filterByDoctor(doctorId) {
-            if (doctorId) {
-                document.getElementById('doctor-filter').value = doctorId;
-            } else {
-                doctorId = document.getElementById('doctor-filter').value;
-            }
-            
-            const timeline = document.getElementById('timeline-container');
-            
-            if (!doctorId) {
-                updateTimeline();
-                return;
-            }
-            
-            const dateStr = selectedDate.toISOString().split('T')[0];
-            const filteredSlots = allSlots
-                .filter(s => s.date === dateStr && s.doctor_id == doctorId)
-                .sort((a, b) => a.start_time.localeCompare(b.start_time));
-            
-            if (filteredSlots.length === 0) {
-                const doctor = allDoctors.find(d => d.id == doctorId);
-                timeline.innerHTML = `
-                    <div class="text-center py-12">
-                        <i class="fas fa-calendar-times text-6xl text-gray-300 mb-4"></i>
-                        <p class="text-xl text-gray-600">No slots for ${doctor ? doctor.name : 'this doctor'} on this date</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            timeline.innerHTML = filteredSlots.map(slot => {
-                const doctor = allDoctors.find(d => d.id === slot.doctor_id);
-                const statusClass = slot.is_available ? 'available' : 'booked';
-                const statusBg = slot.is_available ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
-                const statusText = slot.is_available ? 'Available' : 'Booked';
-                const statusIcon = slot.is_available ? 'fa-check-circle text-green-600' : 'fa-times-circle text-red-600';
-                
-                return `
-                    <div class="timeline-slot ${statusClass} ${statusBg} border-2 rounded-lg hover:shadow-md transition">
-                        <div class="flex items-center justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center mb-2">
-                                    <i class="fas fa-clock text-2xl text-blue-600 mr-3"></i>
-                                    <div>
-                                        <span class="text-xl font-bold text-gray-800">${slot.start_time.substring(0, 5)} - ${slot.end_time.substring(0, 5)}</span>
-                                        <span class="ml-3 px-3 py-1 rounded-full text-sm font-semibold ${slot.is_available ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}">
-                                            <i class="fas ${statusIcon} mr-1"></i>${statusText}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center text-gray-700">
-                                    <i class="fas fa-user-md mr-2"></i>
-                                    <span class="font-semibold">${doctor ? doctor.name : 'Unknown Doctor'}</span>
-                                    ${doctor ? `<span class="ml-2 text-sm text-gray-600">(${doctor.specialty})</span>` : ''}
-                                </div>
-                            </div>
-                            <div class="flex space-x-2">
-                                <button onclick="openEditModal('appointment_slots', ${slot.id}, ${slot.doctor_id}, '${slot.date}', '${slot.start_time}', '${slot.end_time}', ${slot.is_available})" class="bg-blue-100 text-blue-600 p-3 rounded-lg hover:bg-blue-200 transition">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="deleteEntity(${slot.id}, 'Slot', '/appointment_slots/delete')" class="bg-red-100 text-red-600 p-3 rounded-lg hover:bg-red-200 transition">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+        const timeline = document.getElementById("timeline-container");
+
+        if (!doctorId) {
+          updateTimeline();
+          return;
+        }
+
+        const dateStr = formatLocalDate(selectedDate);
+        const filteredSlots = allSlots
+          .filter((s) => s.date === dateStr && s.doctor_id == doctorId)
+          .sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+        if (filteredSlots.length === 0) {
+          const doctor = allDoctors.find((d) => d.id == doctorId);
+          timeline.innerHTML = `
+            <div class="text-center py-12">
+                <i class="fas fa-calendar-times text-6xl text-gray-300 mb-4"></i>
+                <p class="text-xl text-gray-600">No slots for ${
+                  doctor ? doctor.name : "this doctor"
+                } on this date</p>
+            </div>
+        `;
+          return;
+        }
+
+        timeline.innerHTML = filteredSlots
+          .map((slot) => {
+            const doctor = allDoctors.find((d) => d.id === slot.doctor_id);
+            const statusClass = slot.is_available ? "available" : "booked";
+            const statusBg = slot.is_available
+              ? "bg-green-50 border-green-200"
+              : "bg-red-50 border-red-200";
+            const statusText = slot.is_available ? "Available" : "Booked";
+            const statusIcon = slot.is_available
+              ? "fa-check-circle text-green-600"
+              : "fa-times-circle text-red-600";
+
+            return `
+            <div class="timeline-slot ${statusClass} ${statusBg} border-2 rounded-lg hover:shadow-md transition">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-clock text-2xl text-blue-600 mr-3"></i>
+                            <div>
+                                <span class="text-xl font-bold text-gray-800">${slot.start_time.substring(
+                                  0,
+                                  5
+                                )} - ${slot.end_time.substring(0, 5)}</span>
+                                <span class="ml-3 px-3 py-1 rounded-full text-sm font-semibold ${
+                                  slot.is_available
+                                    ? "bg-green-200 text-green-800"
+                                    : "bg-red-200 text-red-800"
+                                }">
+                                    <i class="fas ${statusIcon} mr-1"></i>${statusText}
+                                </span>
                             </div>
                         </div>
+                        <div class="flex items-center text-gray-700">
+                            <i class="fas fa-user-md mr-2"></i>
+                            <span class="font-semibold">${
+                              doctor ? doctor.name : "Unknown Doctor"
+                            }</span>
+                            ${
+                              doctor
+                                ? `<span class="ml-2 text-sm text-gray-600">(${doctor.specialty})</span>`
+                                : ""
+                            }
+                        </div>
                     </div>
-                `;
-            }).join('');
-        }
+                    <div class="flex space-x-2">
+                        <button onclick="openEditModal('appointment_slots', ${
+                          slot.id
+                        }, ${slot.doctor_id}, '${slot.date}', '${
+              slot.start_time
+            }', '${slot.end_time}', ${
+              slot.is_available
+            })" class="bg-blue-100 text-blue-600 p-3 rounded-lg hover:bg-blue-200 transition">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteEntity(${
+                          slot.id
+                        }, 'Slot', '/appointment_slots/delete')" class="bg-red-100 text-red-600 p-3 rounded-lg hover:bg-red-200 transition">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+          })
+          .join("");
+      }
 
-        // Update time distribution
-        function updateTimeDistribution() {
-            let morning = 0, afternoon = 0, evening = 0;
-            
-            allSlots.forEach(slot => {
-                const hour = parseInt(slot.start_time.split(':')[0]);
-                
-                if (hour >= 6 && hour < 12) {
-                    morning++;
-                } else if (hour >= 12 && hour < 18) {
-                    afternoon++;
-                } else if (hour >= 18 && hour < 24) {
-                    evening++;
-                }
-            });
-            
-            document.getElementById('morning-slots').textContent = morning;
-            document.getElementById('afternoon-slots').textContent = afternoon;
-            document.getElementById('evening-slots').textContent = evening;
-        }
+      // Update time distribution
+      function updateTimeDistribution() {
+        let morning = 0,
+          afternoon = 0,
+          evening = 0;
 
-        // Refresh data periodically
-        setInterval(async () => {
-            await loadSlots();
-            generateCalendar();
-            updateTimeline();
-            updateTimeDistribution();
-        }, 30000);
+        allSlots.forEach((slot) => {
+          const hour = parseInt(slot.start_time.split(":")[0]);
+
+          if (hour >= 6 && hour < 12) {
+            morning++;
+          } else if (hour >= 12 && hour < 18) {
+            afternoon++;
+          } else if (hour >= 18 && hour < 24) {
+            evening++;
+          }
+        });
+
+        document.getElementById("morning-slots").textContent = morning;
+        document.getElementById("afternoon-slots").textContent = afternoon;
+        document.getElementById("evening-slots").textContent = evening;
+      }
+
+      // Refresh data periodically
+      setInterval(async () => {
+        await loadSlots();
+        generateCalendar();
+        updateTimeline();
+        updateTimeDistribution();
+      }, 30000);
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", () => {
+        loadDoctors();
+        loadSlots();
+        generateCalendar();
+        updateTimeline();
+        updateTimeDistribution();
+      });
     </script>
-</body>
+  </body>
 </html>

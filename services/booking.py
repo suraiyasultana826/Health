@@ -227,14 +227,16 @@ async def book_appointment(
     """
     db = SessionLocal()
     try:
-        # Check if slot exists and is available
+        # Start by checking if slot exists and is available
         slot = db.query(database.AppointmentSlot).filter(
-            database.AppointmentSlot.id == slot_id,
-            database.AppointmentSlot.is_available == True
+            database.AppointmentSlot.id == slot_id
         ).first()
         
         if not slot:
-            raise HTTPException(status_code=400, detail="Slot not available")
+            raise HTTPException(status_code=404, detail="Slot not found")
+        
+        if not slot.is_available:
+            raise HTTPException(status_code=400, detail="Slot is no longer available")
         
         # Check if patient exists
         patient = db.query(database.Patient).filter(
@@ -244,30 +246,48 @@ async def book_appointment(
         if not patient:
             raise HTTPException(status_code=404, detail="Patient not found")
         
-        # Create appointment
+        # Check if there's already an appointment for this slot
+        existing_appointment = db.query(database.Appointment).filter(
+            database.Appointment.slot_id == slot_id
+        ).first()
+        
+        if existing_appointment:
+            raise HTTPException(status_code=400, detail="This slot already has an appointment")
+        
+        # Create appointment FIRST
         appointment = database.Appointment(
             patient_id=patient_id,
             slot_id=slot_id,
             booked_at=datetime.now()
         )
+        db.add(appointment)
         
-        # Mark slot as unavailable
+        # Mark slot as unavailable AFTER creating appointment
         slot.is_available = False
         
-        db.add(appointment)
+        # Commit both changes together
         db.commit()
+        
+        # Refresh to get the ID
         db.refresh(appointment)
+        
+        print(f"✅ Appointment created successfully: ID={appointment.id}, Patient={patient_id}, Slot={slot_id}")
         
         return {
             "status": "success",
             "appointment_id": appointment.id,
+            "patient_id": patient_id,
+            "slot_id": slot_id,
+            "booked_at": str(appointment.booked_at),
             "message": "Appointment booked successfully"
         }
+        
     except HTTPException:
         db.rollback()
         raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+        print(f"❌ Error booking appointment: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Failed to book appointment: {str(e)}")
     finally:
         db.close()

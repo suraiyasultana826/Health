@@ -8,11 +8,104 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/static/scripts.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .patient-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .patient-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.25);
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        .grid-view .patient-card {
+            display: block;
+        }
+        .list-view .patient-card {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+        .search-highlight {
+            background-color: yellow;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen font-sans">
     {% include 'navbar.html' %}
-    <div class="container mx-auto p-6 max-w-5xl">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Patients</h1>
+    
+    <div class="container mx-auto p-8 max-w-7xl">
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-teal-600 mb-4">
+                <i class="fas fa-user-injured mr-3"></i>Patient Management
+            </h1>
+            <p class="text-xl text-gray-600">Comprehensive patient records and appointment history</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold mb-1">Total Patients</p>
+                        <h3 class="text-4xl font-bold text-gray-800" id="total-patients-stat">0</h3>
+                    </div>
+                    <div class="bg-green-100 rounded-full p-4">
+                        <i class="fas fa-users text-3xl text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold mb-1">Active Appointments</p>
+                        <h3 class="text-4xl font-bold text-blue-600" id="active-appointments">0</h3>
+                    </div>
+                    <div class="bg-blue-100 rounded-full p-4">
+                        <i class="fas fa-calendar-check text-3xl text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold mb-1">New This Month</p>
+                        <h3 class="text-4xl font-bold text-purple-600" id="new-patients">0</h3>
+                    </div>
+                    <div class="bg-purple-100 rounded-full p-4">
+                        <i class="fas fa-user-plus text-3xl text-purple-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-pink-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold mb-1">Avg Visits</p>
+                        <h3 class="text-4xl font-bold text-pink-600" id="avg-visits">0</h3>
+                    </div>
+                    <div class="bg-pink-100 rounded-full p-4">
+                        <i class="fas fa-chart-line text-3xl text-pink-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Feedback Modal -->
         <div id="feedback-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
@@ -23,20 +116,32 @@
 
         <!-- Add Patient Modal -->
         <div id="add-patients-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full transform transition-all">
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add Patient</h2>
-                <form id="add-patients-form" onsubmit="submitForm(event, '/patients', 'add-patients-form', 'Patient')">
-                    <div class="mb-4">
-                        <label class="block text-gray-600 text-sm font-medium mb-1">Name</label>
-                        <input type="text" name="name" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+            <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-user-plus mr-3 text-green-600"></i>Register New Patient
+                </h2>
+                <form id="add-patients-form" onsubmit="submitForm(event, '/patients/', 'add-patients-form', 'Patient')">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">
+                                <i class="fas fa-user mr-2"></i>Full Name
+                            </label>
+                            <input type="text" name="name" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition" placeholder="John Doe" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">
+                                <i class="fas fa-envelope mr-2"></i>Email Address
+                            </label>
+                            <input type="email" name="email" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition" placeholder="john.doe@example.com" required>
+                        </div>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-600 text-sm font-medium mb-1">Email</label>
-                        <input type="email" name="email" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
-                    </div>
-                    <div class="flex justify-end space-x-2">
-                        <button type="button" onclick="closeAddModal('patients')" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">Cancel</button>
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Add Patient</button>
+                    <div class="flex justify-end space-x-3 mt-8">
+                        <button type="button" onclick="closeAddModal('patients')" class="bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-semibold">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-green-700 hover:to-teal-700 transition font-semibold shadow-lg">
+                            <i class="fas fa-save mr-2"></i>Register Patient
+                        </button>
                     </div>
                 </form>
             </div>
@@ -44,83 +149,512 @@
 
         <!-- Edit Patient Modal -->
         <div id="edit-patients-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full transform transition-all">
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Edit Patient</h2>
+            <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-edit mr-3 text-blue-600"></i>Edit Patient
+                </h2>
                 <form id="edit-patients-form" onsubmit="submitForm(event, '/patients/update', 'edit-patients-form', 'Patient')">
                     <input type="hidden" name="patient_id" id="edit-patients-id">
-                    <div class="mb-4">
-                        <label class="block text-gray-600 text-sm font-medium mb-1">Name</label>
-                        <input type="text" name="name" id="edit-patients-name" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">
+                                <i class="fas fa-user mr-2"></i>Full Name
+                            </label>
+                            <input type="text" name="name" id="edit-patients-name" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">
+                                <i class="fas fa-envelope mr-2"></i>Email Address
+                            </label>
+                            <input type="email" name="email" id="edit-patients-email" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" required>
+                        </div>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-600 text-sm font-medium mb-1">Email</label>
-                        <input type="email" name="email" id="edit-patients-email" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
-                    </div>
-                    <div class="flex justify-end space-x-2">
-                        <button type="button" onclick="closeEditModal('patients')" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">Cancel</button>
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Update Patient</button>
+                    <div class="flex justify-end space-x-3 mt-8">
+                        <button type="button" onclick="closeEditModal('patients')" class="bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-semibold">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition font-semibold shadow-lg">
+                            <i class="fas fa-save mr-2"></i>Update Patient
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Search and Filter -->
-        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Patients List</h2>
-            <div class="flex flex-col md:flex-row md:items-end md:space-x-4 mb-4">
-                <div class="mb-4 md:mb-0 md:flex-1">
-                    <label class="block text-gray-600 text-sm font-medium mb-1">Search by Name</label>
-                    <input type="text" id="search-patients" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" placeholder="Enter patient name" oninput="filterList('patients')">
+        <!-- Patient Details Modal -->
+        <div id="patient-details-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+            <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-4xl w-full m-4 transform transition-all max-h-screen overflow-y-auto">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-3xl font-bold text-gray-800 flex items-center">
+                        <i class="fas fa-user-circle mr-3 text-green-600"></i>Patient Details
+                    </h2>
+                    <button onclick="closePatientDetails()" class="text-gray-500 hover:text-gray-700 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <div class="mb-4 md:mb-0 md:flex-1">
-                    <label class="block text-gray-600 text-sm font-medium mb-1">Filter by Email</label>
-                    <select id="filter-patients" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" onchange="filterList('patients')">
-                        <option value="">All Emails</option>
-                        {% for patient in patients %}
-                        <option value="{{ patient[2] }}">{{ patient[2] }}</option>
-                        {% endfor %}
+                <div id="patient-details-content">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Search, Filter, and Actions -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6">
+                <div class="flex-1">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                        <i class="fas fa-search mr-2"></i>Search Patients
+                    </label>
+                    <input 
+                        type="text" 
+                        id="search-patients" 
+                        class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm" 
+                        placeholder="Search by name or email..."
+                        oninput="filterList('patients')"
+                    >
+                </div>
+
+                <div class="flex-1">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                        <i class="fas fa-sort-alpha-down mr-2"></i>Sort By
+                    </label>
+                    <select 
+                        id="sort-patients" 
+                        class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition shadow-sm"
+                        onchange="sortPatients()"
+                    >
+                        <option value="name-asc">Name (A-Z)</option>
+                        <option value="name-desc">Name (Z-A)</option>
+                        <option value="email-asc">Email (A-Z)</option>
+                        <option value="email-desc">Email (Z-A)</option>
+                        <option value="id-asc">ID (Oldest First)</option>
+                        <option value="id-desc">ID (Newest First)</option>
                     </select>
                 </div>
-                <button onclick="openAddModal('patients')" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center">
-                    <i class="fas fa-user-plus mr-2"></i>Add Patient
-                </button>
+
+                <div class="flex items-end space-x-3">
+                    <button 
+                        onclick="toggleView()" 
+                        class="bg-gray-200 text-gray-700 px-6 py-4 rounded-lg hover:bg-gray-300 transition font-semibold shadow-sm"
+                        title="Toggle View"
+                    >
+                        <i class="fas fa-th" id="view-icon"></i>
+                    </button>
+                    <button 
+                        onclick="openAddModal('patients')" 
+                        class="bg-gradient-to-r from-green-600 to-teal-600 text-white px-8 py-4 rounded-lg hover:from-green-700 hover:to-teal-700 transition font-semibold shadow-lg"
+                    >
+                        <i class="fas fa-plus mr-2"></i>Add Patient
+                    </button>
+                </div>
             </div>
 
-            <!-- Patients List -->
-            <div id="patients-list">
-                {% if patients %}
-                <table id="patients-table" class="w-full bg-white shadow-md rounded-lg overflow-hidden">
-                    <thead class="bg-gray-200">
-                        <tr>
-                            <th class="p-3 text-left">ID</th>
-                            <th class="p-3 text-left">Name</th>
-                            <th class="p-3 text-left">Email</th>
-                            <th class="p-3 text-left">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for patient in patients %}
-                        <tr class="border-t" data-name="{{ patient[1] }}" data-filter="{{ patient[2] }}">
-                            <td class="p-3">{{ patient[0] }}</td>
-                            <td class="p-3">{{ patient[1] }}</td>
-                            <td class="p-3">{{ patient[2] }}</td>
-                            <td class="p-3 flex space-x-2">
-                                <button onclick="openEditModal('patients', {{ patient[0] }}, '{{ patient[1] }}', '{{ patient[2] }}')" class="text-blue-600 hover:text-blue-800">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="deleteEntity({{ patient[0] }}, 'Patient', '/patients/delete')" class="text-red-600 hover:text-red-800">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p class="text-gray-600">No patients found.</p>
-                {% endif %}
+            <!-- View Toggle Info -->
+            <div class="flex items-center justify-between text-sm text-gray-600 mb-4">
+                <span id="patient-count">Showing 0 patients</span>
+                <span id="current-view" class="font-semibold">Grid View</span>
+            </div>
+        </div>
+
+        <!-- Patients Display -->
+        <div id="patients-list" class="mb-8">
+            <div id="patients-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 grid-view">
+                <!-- Patient cards will be inserted here -->
+            </div>
+            <div id="no-patients" class="hidden text-center py-12">
+                <i class="fas fa-user-injured text-6xl text-gray-300 mb-4"></i>
+                <p class="text-xl text-gray-600">No patients found</p>
             </div>
         </div>
     </div>
+
+    <script>
+        let currentView = 'grid';
+        let allPatients = [];
+        let allAppointments = [];
+
+        // Toggle between grid and list view
+        function toggleView() {
+            const container = document.getElementById('patients-container');
+            const viewIcon = document.getElementById('view-icon');
+            const viewText = document.getElementById('current-view');
+            
+            if (currentView === 'grid') {
+                currentView = 'list';
+                container.classList.remove('grid-view', 'grid', 'md:grid-cols-2', 'lg:grid-cols-3');
+                container.classList.add('list-view', 'space-y-4');
+                viewIcon.className = 'fas fa-list';
+                viewText.textContent = 'List View';
+            } else {
+                currentView = 'grid';
+                container.classList.remove('list-view', 'space-y-4');
+                container.classList.add('grid-view', 'grid', 'md:grid-cols-2', 'lg:grid-cols-3');
+                viewIcon.className = 'fas fa-th';
+                viewText.textContent = 'Grid View';
+            }
+            displayPatients(allPatients);
+        }
+
+        // Load and display patients
+        async function loadPatients() {
+            try {
+                const [patients, appointments] = await Promise.all([
+                    fetch('/patients/list').then(r => r.json()),
+                    fetch('/appointments/list').then(r => r.json())
+                ]);
+
+                allPatients = patients;
+                allAppointments = appointments;
+                
+                // Update statistics
+                document.getElementById('total-patients-stat').textContent = patients.length;
+                document.getElementById('active-appointments').textContent = appointments.length;
+                
+                // Calculate new patients this month
+                const thisMonth = new Date().getMonth();
+                const newPatients = patients.filter(p => {
+                    // Assuming newer IDs are more recent - this is a simplification
+                    return p.id > (patients.length * 0.8);
+                }).length;
+                document.getElementById('new-patients').textContent = newPatients;
+                
+                // Calculate average visits
+                const patientAppointments = {};
+                appointments.forEach(apt => {
+                    patientAppointments[apt.patient_id] = (patientAppointments[apt.patient_id] || 0) + 1;
+                });
+                const avgVisits = patients.length > 0 ? 
+                    (Object.values(patientAppointments).reduce((a, b) => a + b, 0) / patients.length).toFixed(1) : 0;
+                document.getElementById('avg-visits').textContent = avgVisits;
+                
+                // Display patients
+                displayPatients(patients);
+            } catch (error) {
+                console.error('Error loading patients:', error);
+            }
+        }
+
+        // Display patients
+        function displayPatients(patients) {
+            const container = document.getElementById('patients-container');
+            const noPatients = document.getElementById('no-patients');
+            const patientCount = document.getElementById('patient-count');
+
+            if (patients.length === 0) {
+                container.innerHTML = '';
+                noPatients.classList.remove('hidden');
+                patientCount.textContent = 'Showing 0 patients';
+                return;
+            }
+
+            noPatients.classList.add('hidden');
+            patientCount.textContent = `Showing ${patients.length} patient${patients.length > 1 ? 's' : ''}`;
+
+            const avatarColors = [
+                'from-red-400 to-pink-400',
+                'from-blue-400 to-indigo-400',
+                'from-green-400 to-teal-400',
+                'from-purple-400 to-pink-400',
+                'from-yellow-400 to-orange-400',
+                'from-indigo-400 to-purple-400'
+            ];
+
+            container.innerHTML = patients.map((patient, index) => {
+                const gradient = avatarColors[index % avatarColors.length];
+                const initials = patient.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                const appointmentCount = allAppointments.filter(a => a.patient_id === patient.id).length;
+                const lastVisit = allAppointments.filter(a => a.patient_id === patient.id)
+                    .sort((a, b) => new Date(b.booked_at) - new Date(a.booked_at))[0];
+
+                return `
+                    <div class="patient-card bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 fade-in-up" style="animation-delay: ${index * 0.1}s" data-name="${patient.name.toLowerCase()}" data-filter="${patient.email.toLowerCase()}">
+                        <div class="bg-gradient-to-r ${gradient} p-6 text-white relative">
+                            <div class="absolute top-4 right-4">
+                                <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-semibold">
+                                    ID: ${patient.id}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-center mb-4">
+                                <div class="bg-white bg-opacity-20 rounded-full w-24 h-24 flex items-center justify-center text-4xl font-bold">
+                                    ${initials}
+                                </div>
+                            </div>
+                            <h3 class="text-2xl font-bold text-center mb-2">${patient.name}</h3>
+                            <p class="text-white text-opacity-90 text-center text-sm flex items-center justify-center">
+                                <i class="fas fa-envelope mr-2"></i>${patient.email}
+                            </p>
+                        </div>
+                        
+                        <div class="p-6">
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                    <div class="text-2xl font-bold text-blue-600">${appointmentCount}</div>
+                                    <div class="text-xs text-gray-600">Appointments</div>
+                                </div>
+                                <div class="text-center p-3 bg-green-50 rounded-lg">
+                                    <div class="text-sm font-bold text-green-600">
+                                        ${lastVisit ? new Date(lastVisit.booked_at).toLocaleDateString() : 'Never'}
+                                    </div>
+                                    <div class="text-xs text-gray-600">Last Visit</div>
+                                </div>
+                            </div>
+
+                            <button onclick="viewPatientDetails(${patient.id})" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-semibold shadow-md mb-2">
+                                <i class="fas fa-eye mr-2"></i>View Details
+                            </button>
+
+                            <div class="flex space-x-2">
+                                <button onclick="openEditModal('patients', ${patient.id}, '${patient.name.replace(/'/g, "\\'")}', '${patient.email.replace(/'/g, "\\'")}'); event.stopPropagation();" class="flex-1 bg-blue-100 text-blue-600 px-4 py-3 rounded-lg hover:bg-blue-200 transition font-semibold">
+                                    <i class="fas fa-edit mr-2"></i>Edit
+                                </button>
+                                <button onclick="deleteEntity(${patient.id}, 'Patient', '/patients/delete'); event.stopPropagation();" class="flex-1 bg-red-100 text-red-600 px-4 py-3 rounded-lg hover:bg-red-200 transition font-semibold">
+                                    <i class="fas fa-trash mr-2"></i>Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // View patient details
+        async function viewPatientDetails(patientId) {
+            const patient = allPatients.find(p => p.id === patientId);
+            if (!patient) return;
+
+            const patientAppointments = allAppointments.filter(a => a.patient_id === patientId);
+            
+            // Fetch slots for appointment details
+            const slots = await fetch('/appointment_slots/list').then(r => r.json());
+            const doctors = await fetch('/doctors/list').then(r => r.json());
+
+            const appointmentDetails = patientAppointments.map(apt => {
+                const slot = slots.find(s => s.id === apt.slot_id);
+                const doctor = slot ? doctors.find(d => d.id === slot.doctor_id) : null;
+                return { ...apt, slot, doctor };
+            }).sort((a, b) => new Date(b.booked_at) - new Date(a.booked_at));
+
+            const content = document.getElementById('patient-details-content');
+            content.innerHTML = `
+                <div class="mb-6 p-6 bg-gradient-to-r from-green-100 to-teal-100 rounded-xl">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-gradient-to-r from-green-500 to-teal-500 rounded-full w-20 h-20 flex items-center justify-center text-white text-3xl font-bold">
+                            ${patient.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+                        </div>
+                        <div>
+                            <h3 class="text-3xl font-bold text-gray-800">${patient.name}</h3>
+                            <p class="text-gray-600 flex items-center mt-1">
+                                <i class="fas fa-envelope mr-2"></i>${patient.email}
+                            </p>
+                            <p class="text-gray-600 flex items-center mt-1">
+                                <i class="fas fa-id-card mr-2"></i>Patient ID: ${patient.id}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-blue-50 rounded-xl p-6 text-center">
+                        <i class="fas fa-calendar-check text-4xl text-blue-600 mb-3"></i>
+                        <div class="text-3xl font-bold text-blue-600">${patientAppointments.length}</div>
+                        <div class="text-gray-600">Total Appointments</div>
+                    </div>
+                    <div class="bg-purple-50 rounded-xl p-6 text-center">
+                        <i class="fas fa-clock text-4xl text-purple-600 mb-3"></i>
+                        <div class="text-3xl font-bold text-purple-600">
+                            ${appointmentDetails[0] ? new Date(appointmentDetails[0].booked_at).toLocaleDateString() : 'Never'}
+                        </div>
+                        <div class="text-gray-600">Last Visit</div>
+                    </div>
+                    <div class="bg-pink-50 rounded-xl p-6 text-center">
+                        <i class="fas fa-chart-line text-4xl text-pink-600 mb-3"></i>
+                        <div class="text-3xl font-bold text-pink-600">
+                            ${appointmentDetails.length > 0 ? 'Active' : 'Inactive'}
+                        </div>
+                        <div class="text-gray-600">Status</div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h4 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-history mr-3 text-blue-600"></i>Appointment History
+                    </h4>
+                    ${appointmentDetails.length > 0 ? `
+                        <div class="space-y-3 max-h-96 overflow-y-auto">
+                            ${appointmentDetails.map(apt => `
+                                <div class="bg-white border-2 border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center mb-2">
+                                                <i class="fas fa-user-md text-2xl text-blue-600 mr-3"></i>
+                                                <div>
+                                                    <p class="font-bold text-gray-800">${apt.doctor ? apt.doctor.name : 'Unknown Doctor'}</p>
+                                                    <p class="text-sm text-gray-600">${apt.doctor ? apt.doctor.specialty : 'N/A'}</p>
+                                                </div>
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                                <div class="flex items-center text-gray-600">
+                                                    <i class="fas fa-calendar mr-2 text-purple-500"></i>
+                                                    ${apt.slot ? apt.slot.date : 'N/A'}
+                                                </div>
+                                                <div class="flex items-center text-gray-600">
+                                                    <i class="fas fa-clock mr-2 text-green-500"></i>
+                                                    ${apt.slot ? apt.slot.start_time.substring(0, 5) : 'N/A'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                                <i class="fas fa-check-circle mr-1"></i>Booked
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : `
+                        <div class="text-center py-12 bg-gray-50 rounded-lg">
+                            <i class="fas fa-calendar-times text-6xl text-gray-300 mb-4"></i>
+                            <p class="text-xl text-gray-600">No appointment history</p>
+                        </div>
+                    `}
+                </div>
+
+                <div class="flex space-x-3">
+                    <button onclick="window.location.href='/booking?patient_id=${patient.id}'" class="flex-1 bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-3 rounded-lg hover:from-green-700 hover:to-teal-700 transition font-semibold shadow-lg">
+                        <i class="fas fa-calendar-plus mr-2"></i>Book New Appointment
+                    </button>
+                    <button onclick="closePatientDetails(); openEditModal('patients', ${patient.id}, '${patient.name.replace(/'/g, "\\'")}', '${patient.email.replace(/'/g, "\\'")}')" class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition font-semibold shadow-lg">
+                        <i class="fas fa-edit mr-2"></i>Edit Patient
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('patient-details-modal').classList.remove('hidden');
+        }
+
+        // Close patient details
+        function closePatientDetails() {
+            document.getElementById('patient-details-modal').classList.add('hidden');
+        }
+
+        // Sort patients
+        function sortPatients() {
+            const sortValue = document.getElementById('sort-patients').value;
+            const [field, order] = sortValue.split('-');
+            
+            const sorted = [...allPatients].sort((a, b) => {
+                let aVal = a[field];
+                let bVal = b[field];
+                
+                if (field === 'name' || field === 'email') {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+                
+                if (order === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+            
+            displayPatients(sorted);
+        }
+
+        // Enhanced filter function
+        function filterList(entity) {
+            const searchInput = document.getElementById(`search-${entity}`);
+            
+            if (!searchInput) return;
+            
+            const searchValue = searchInput.value.toLowerCase();
+            
+            if (searchValue === '') {
+                displayPatients(allPatients);
+                return;
+            }
+            
+            const filtered = allPatients.filter(patient => {
+                const matchesName = patient.name.toLowerCase().includes(searchValue);
+                const matchesEmail = patient.email.toLowerCase().includes(searchValue);
+                return matchesName || matchesEmail;
+            });
+
+            displayPatients(filtered);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPatients();
+            
+            // Refresh every 30 seconds
+            setInterval(loadPatients, 30000);
+        });
+
+        // Export patients data
+        function exportPatients() {
+            const csv = [
+                ['ID', 'Name', 'Email', 'Total Appointments'].join(','),
+                ...allPatients.map(p => {
+                    const appointmentCount = allAppointments.filter(a => a.patient_id === p.id).length;
+                    return [p.id, p.name, p.email, appointmentCount].join(',');
+                })
+            ].join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `patients_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        // Print patient list
+        function printPatients() {
+            window.print();
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + K to focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('search-patients').focus();
+            }
+            
+            // Ctrl/Cmd + N to add new patient
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                openAddModal('patients');
+            }
+            
+            // Escape to close modals
+            if (e.key === 'Escape') {
+                closeAddModal('patients');
+                closeEditModal('patients');
+                closePatientDetails();
+            }
+        });
+    </script>
+
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #patients-container, #patients-container * {
+                visibility: visible;
+            }
+            #patients-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+            .patient-card {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
 </body>
 </html>
