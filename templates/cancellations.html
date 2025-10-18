@@ -3,40 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Cancellations</title>
+    <title>Cancellation Management & Analytics</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/static/scripts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .cancellation-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .cancellation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.25);
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .7; }
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen font-sans">
     {% include 'navbar.html' %}
-    <div class="container mx-auto p-6 max-w-5xl">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Cancellations</h1>
+    
+    <div class="container mx-auto p-8 max-w-7xl">
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-pink-600 mb-4">
+                <i class="fas fa-ban mr-3"></i>Cancellation Management & Analytics
+            </h1>
+            <p class="text-xl text-gray-600">Track, analyze, and manage appointment cancellations</p>
+        </div>
+
+        <!-- Statistics Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-red-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold mb-1">Total Cancellations</p>
+                        <h3 class="text-4xl font-bold text-gray-800" id="total-cancellations">0</h3>
+                    </div>
+                    <div class="bg-red-100 rounded-full p-4">
+                        <i class="fas fa-times-circle text-3xl text-red-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-orange-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold mb-1">Cancellation Rate</p>
+                        <h3 class="text-4xl font-bold text-orange-600" id="cancellation-rate">0%</h3>
+                    </div>
+                    <div class="bg-orange-100 rounded-full p-4">
+                        <i class="fas fa-percentage text-3xl text-orange-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-yellow-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold mb-1">This Week</p>
+                        <h3 class="text-4xl font-bold text-yellow-600" id="week-cancellations">0</h3>
+                    </div>
+                    <div class="bg-yellow-100 rounded-full p-4">
+                        <i class="fas fa-calendar-week text-3xl text-yellow-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold mb-1">This Month</p>
+                        <h3 class="text-4xl font-bold text-purple-600" id="month-cancellations">0</h3>
+                    </div>
+                    <div class="bg-purple-100 rounded-full p-4">
+                        <i class="fas fa-calendar-alt text-3xl text-purple-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-xl p-6 border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold mb-1">Avg Days to Cancel</p>
+                        <h3 class="text-4xl font-bold text-blue-600" id="avg-days-to-cancel">0</h3>
+                    </div>
+                    <div class="bg-blue-100 rounded-full p-4">
+                        <i class="fas fa-clock text-3xl text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Cancellation Trends -->
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-chart-line mr-3 text-blue-600"></i>Cancellation Trends (Last 30 Days)
+                </h2>
+                <canvas id="trends-chart"></canvas>
+            </div>
+
+            <!-- Cancellations by Reason -->
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-chart-pie mr-3 text-purple-600"></i>Cancellations by Reason
+                </h2>
+                <canvas id="reasons-chart"></canvas>
+            </div>
+
+            <!-- Cancellations by Day of Week -->
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-calendar mr-3 text-green-600"></i>Cancellations by Day of Week
+                </h2>
+                <canvas id="day-chart"></canvas>
+            </div>
+
+            <!-- Top Cancellation Reasons -->
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-list-ol mr-3 text-pink-600"></i>Top Cancellation Reasons
+                </h2>
+                <div id="top-reasons" class="space-y-3 max-h-64 overflow-y-auto">
+                    <!-- Top reasons will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Doctor & Patient Analytics -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Cancellations by Doctor -->
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-user-md mr-3 text-blue-600"></i>Cancellations by Doctor
+                </h2>
+                <div id="doctor-cancellations" class="space-y-3 max-h-96 overflow-y-auto">
+                    <!-- Doctor stats will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Frequent Cancellers -->
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-exclamation-triangle mr-3 text-red-600"></i>Frequent Cancellers
+                </h2>
+                <div id="frequent-cancellers" class="space-y-3 max-h-96 overflow-y-auto">
+                    <!-- Frequent cancellers will be inserted here -->
+                </div>
+            </div>
+        </div>
 
         <!-- Feedback Modal -->
         <div id="feedback-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div id="modal-message" class="p-6 rounded-lg shadow-lg max-w-md w-full">
+            <div id="modal-message" class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
                 <button onclick="closeModal()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 w-full">Close</button>
             </div>
         </div>
 
         <!-- Add Cancellation Modal -->
         <div id="add-cancellations-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full transform transition-all">
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add Cancellation</h2>
-                <form id="add-cancellations-form" onsubmit="submitForm(event, '/cancellations', 'add-cancellations-form', 'Cancellation')">
-                    <div class="mb-4">
-                        <label class="block text-gray-600 text-sm font-medium mb-1">Appointment ID</label>
-                        <input type="number" name="appointment_id" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+            <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-times-circle mr-3 text-red-600"></i>Record Cancellation
+                </h2>
+                <form id="add-cancellations-form" onsubmit="submitForm(event, '/cancellations/', 'add-cancellations-form', 'Cancellation')">
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <i class="fas fa-calendar-check mr-2"></i>Select Appointment to Cancel
+                        </label>
+                        <select name="appointment_id" id="add-appointment-select" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 transition" required>
+                            <option value="">Choose an appointment...</option>
+                        </select>
+                        <div id="appointment-details" class="hidden mt-3 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                            <!-- Appointment details will be shown here -->
+                        </div>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-600 text-sm font-medium mb-1">Reason</label>
-                        <input type="text" name="reason" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500">
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <i class="fas fa-comment mr-2"></i>Cancellation Reason
+                        </label>
+                        <select id="reason-select" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 transition mb-2">
+                            <option value="">Select a reason...</option>
+                            <option value="Patient request">Patient request</option>
+                            <option value="Doctor unavailable">Doctor unavailable</option>
+                            <option value="Emergency">Emergency</option>
+                            <option value="Rescheduled">Rescheduled</option>
+                            <option value="Patient illness">Patient illness</option>
+                            <option value="Transportation issues">Transportation issues</option>
+                            <option value="Other">Other (specify below)</option>
+                        </select>
+                        <textarea name="reason" id="reason-text" rows="3" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 transition" placeholder="Additional details (optional)"></textarea>
                     </div>
-                    <div class="flex justify-end space-x-2">
-                        <button type="button" onclick="closeAddModal('cancellations')" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">Cancel</button>
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Add Cancellation</button>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeAddModal('cancellations')" class="bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-semibold">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-gradient-to-r from-red-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-red-700 hover:to-pink-700 transition font-semibold shadow-lg">
+                            <i class="fas fa-save mr-2"></i>Record Cancellation
+                        </button>
                     </div>
                 </form>
             </div>
@@ -44,85 +232,324 @@
 
         <!-- Edit Cancellation Modal -->
         <div id="edit-cancellations-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full transform transition-all">
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Edit Cancellation</h2>
+            <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-edit mr-3 text-purple-600"></i>Edit Cancellation
+                </h2>
                 <form id="edit-cancellations-form" onsubmit="submitForm(event, '/cancellations/update', 'edit-cancellations-form', 'Cancellation')">
                     <input type="hidden" name="cancellation_id" id="edit-cancellations-id">
-                    <div class="mb-4">
-                        <label class="block text-gray-600 text-sm font-medium mb-1">Appointment ID</label>
-                        <input type="number" name="appointment_id" id="edit-cancellations-appointment-id" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <i class="fas fa-calendar-check mr-2"></i>Appointment ID
+                        </label>
+                        <input type="number" name="appointment_id" id="edit-cancellations-appointment-id" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition" required readonly>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-600 text-sm font-medium mb-1">Reason</label>
-                        <input type="text" name="reason" id="edit-cancellations-reason" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500">
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <i class="fas fa-comment mr-2"></i>Cancellation Reason
+                        </label>
+                        <textarea name="reason" id="edit-cancellations-reason" rows="3" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 transition" placeholder="Enter reason for cancellation"></textarea>
                     </div>
-                    <div class="flex justify-end space-x-2">
-                        <button type="button" onclick="closeEditModal('cancellations')" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">Cancel</button>
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Update Cancellation</button>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeEditModal('cancellations')" class="bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-semibold">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-semibold shadow-lg">
+                            <i class="fas fa-save mr-2"></i>Update Cancellation
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
-
-        <!-- Search and Filter -->
-        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Cancellations List</h2>
-            <div class="flex flex-col md:flex-row md:items-end md:space-x-4 mb-4">
-                <div class="mb-4 md:mb-0 md:flex-1">
-                    <label class="block text-gray-600 text-sm font-medium mb-1">Search by ID</label>
-                    <input type="text" id="search-cancellations" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" placeholder="Enter cancellation ID" oninput="filterList('cancellations')">
-                </div>
-                <div class="mb-4 md:mb-0 md:flex-1">
-                    <label class="block text-gray-600 text-sm font-medium mb-1">Filter by Appointment ID</label>
-                    <select id="filter-cancellations" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" onchange="filterList('cancellations')">
-                        <option value="">All Appointments</option>
-                        {% for cancellation in cancellations %}
-                        <option value="{{ cancellation[1] }}">{{ cancellation[1] }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button onclick="openAddModal('cancellations')" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center">
-                    <i class="fas fa-times-circle mr-2"></i>Add Cancellation
-                </button>
-            </div>
-
-            <!-- Cancellations List -->
-            <div id="cancellations-list">
-                {% if cancellations %}
-                <table id="cancellations-table" class="w-full bg-white shadow-md rounded-lg overflow-hidden">
-                    <thead class="bg-gray-200">
-                        <tr>
-                            <th class="p-3 text-left">ID</th>
-                            <th class="p-3 text-left">Appointment ID</th>
-                            <th class="p-3 text-left">Reason</th>
-                            <th class="p-3 text-left">Cancelled At</th>
-                            <th class="p-3 text-left">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for cancellation in cancellations %}
-                        <tr class="border-t" data-name="{{ cancellation[0] }}" data-filter="{{ cancellation[1] }}">
-                            <td class="p-3">{{ cancellation[0] }}</td>
-                            <td class="p-3">{{ cancellation[1] }}</td>
-                            <td class="p-3">{{ cancellation[2] or '' }}</td>
-                            <td class="p-3">{{ cancellation[3] }}</td>
-                            <td class="p-3 flex space-x-2">
-                                <button onclick="openEditModal('cancellations', {{ cancellation[0] }}, {{ cancellation[1] }}, '{{ cancellation[2] or '' }}')" class="text-blue-600 hover:text-blue-800">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="deleteEntity({{ cancellation[0] }}, 'Cancellation', '/cancellations/delete')" class="text-red-600 hover:text-red-800">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p class="text-gray-600">No cancellations found.</p>
-                {% endif %}
-            </div>
-        </div>
     </div>
+
+    <script>
+        // Fetch analytics data and update dashboard
+        async function fetchAnalytics() {
+            try {
+                const response = await fetch('/cancellations/analytics');
+                const data = await response.json();
+                
+                // Update statistics
+                document.getElementById('total-cancellations').textContent = data.total_cancellations;
+                document.getElementById('cancellation-rate').textContent = `${data.cancellation_rate}%`;
+                document.getElementById('week-cancellations').textContent = data.this_week;
+                document.getElementById('month-cancellations').textContent = data.this_month;
+                document.getElementById('avg-days-to-cancel').textContent = data.avg_days_to_cancel;
+
+                // Update doctor cancellations
+                const doctorContainer = document.getElementById('doctor-cancellations');
+                doctorContainer.innerHTML = data.by_doctor.map(doctor => `
+                    <div class="cancellation-card bg-gray-50 p-4 rounded-lg shadow">
+                        <p class="font-semibold text-gray-800">${doctor.doctor_name}</p>
+                        <p class="text-sm text-gray-600">${doctor.specialty}</p>
+                        <p class="text-lg font-bold text-blue-600">${doctor.cancellations} cancellations</p>
+                    </div>
+                `).join('');
+
+                // Update frequent cancellers
+                const cancellersContainer = document.getElementById('frequent-cancellers');
+                cancellersContainer.innerHTML = data.by_patient.map(patient => `
+                    <div class="cancellation-card bg-gray-50 p-4 rounded-lg shadow">
+                        <p class="font-semibold text-gray-800">${patient.patient_name}</p>
+                        <p class="text-sm text-gray-600">${patient.email}</p>
+                        <p class="text-lg font-bold text-red-600">${patient.cancellations} cancellations</p>
+                    </div>
+                `).join('');
+
+                // Update top reasons
+                const reasonsContainer = document.getElementById('top-reasons');
+                reasonsContainer.innerHTML = data.by_reason.map(reason => `
+                    <div class="cancellation-card bg-gray-50 p-4 rounded-lg shadow">
+                        <p class="font-semibold text-gray-800">${reason.reason}</p>
+                        <p class="text-lg font-bold text-pink-600">${reason.count} cancellations</p>
+                    </div>
+                `).join('');
+
+                // Initialize charts
+                initCharts();
+            } catch (error) {
+                console.error('Error fetching analytics:', error);
+                showModal('Error', 'Failed to load analytics data.', 'error');
+            }
+        }
+
+        // Fetch trends data and initialize charts
+        async function fetchTrends() {
+            try {
+                const response = await fetch('/cancellations/trends');
+                const data = await response.json();
+
+                // Trends Chart (Line)
+                const trendsChart = new Chart(document.getElementById('trends-chart'), {
+                    type: 'line',
+                    data: {
+                        labels: data.daily_trends.map(t => t.date),
+                        datasets: [{
+                            label: 'Cancellations',
+                            data: data.daily_trends.map(t => t.count),
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: true, text: 'Cancellations Over Time' }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+
+                // Day of Week Chart (Bar)
+                const dayChart = new Chart(document.getElementById('day-chart'), {
+                    type: 'bar',
+                    data: {
+                        labels: data.by_day_of_week.map(d => d.day),
+                        datasets: [{
+                            label: 'Cancellations',
+                            data: data.by_day_of_week.map(d => d.count),
+                            backgroundColor: '#10B981',
+                            borderColor: '#059669',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: true, text: 'Cancellations by Day of Week' }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+
+                // Reasons Chart (Pie)
+                const reasonsResponse = await fetch('/cancellations/patterns');
+                const reasonsData = await reasonsResponse.json();
+                const reasonsChart = new Chart(document.getElementById('reasons-chart'), {
+                    type: 'pie',
+                    data: {
+                        labels: reasonsData.top_reasons.map(r => r.reason),
+                        datasets: [{
+                            data: reasonsData.top_reasons.map(r => r.count),
+                            backgroundColor: [
+                                '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
+                                '#D4A5A5', '#9B59B6', '#3498DB', '#E74C3C', '#2ECC71'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'right' },
+                            title: { display: true, text: 'Top Cancellation Reasons' }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching trends:', error);
+                showModal('Error', 'Failed to load trends data.', 'error');
+            }
+        }
+
+        // Initialize charts
+        function initCharts() {
+            fetchTrends();
+        }
+
+        // Fetch available appointments for add cancellation modal
+        async function fetchAppointments() {
+            try {
+                const response = await fetch('/appointments/list');
+                const appointments = await response.json();
+                const select = document.getElementById('add-appointment-select');
+                select.innerHTML = '<option value="">Choose an appointment...</option>';
+                appointments.forEach(appointment => {
+                    select.innerHTML += `<option value="${appointment.id}">Appointment ID: ${appointment.id} (Patient ID: ${appointment.patient_id}, Slot ID: ${appointment.slot_id})</option>`;
+                });
+
+                // Handle appointment selection
+                select.addEventListener('change', async (event) => {
+                    const appointmentId = event.target.value;
+                    if (appointmentId) {
+                        const detailsResponse = await fetch(`/appointments/check-cancellation/${appointmentId}`);
+                        const details = await detailsResponse.json();
+                        const detailsDiv = document.getElementById('appointment-details');
+                        if (details.is_cancelled) {
+                            detailsDiv.innerHTML = '<p class="text-red-600">This appointment is already cancelled.</p>';
+                            detailsDiv.classList.remove('hidden');
+                            document.querySelector('#add-cancellations-form button[type="submit"]').disabled = true;
+                        } else {
+                            // Fetch additional appointment details if needed
+                            detailsDiv.innerHTML = `
+                                <p><strong>Patient ID:</strong> ${appointment.patient_id}</p>
+                                <p><strong>Slot ID:</strong> ${appointment.slot_id}</p>
+                                <p><strong>Booked At:</strong> ${appointment.booked_at}</p>
+                            `;
+                            detailsDiv.classList.remove('hidden');
+                            document.querySelector('#add-cancellations-form button[type="submit"]').disabled = false;
+                        }
+                    } else {
+                        document.getElementById('appointment-details').classList.add('hidden');
+                        document.querySelector('#add-cancellations-form button[type="submit"]').disabled = false;
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching appointments:', error);
+                showModal('Error', 'Failed to load appointments.', 'error');
+            }
+        }
+
+        // Handle reason selection
+        document.getElementById('reason-select')?.addEventListener('change', (event) => {
+            const reasonText = document.getElementById('reason-text');
+            if (event.target.value === 'Other') {
+                reasonText.placeholder = 'Please specify the reason';
+                reasonText.required = true;
+            } else {
+                reasonText.placeholder = 'Additional details (optional)';
+                reasonText.required = false;
+                reasonText.value = event.target.value;
+            }
+        });
+
+        // Modal functions
+        function showModal(title, message, type = 'info') {
+            const modal = document.getElementById('feedback-modal');
+            const modalMessage = document.getElementById('modal-message');
+            modalMessage.innerHTML = `
+                <h3 class="text-2xl font-semibold ${type === 'error' ? 'text-red-600' : 'text-blue-600'} mb-4">${title}</h3>
+                <p class="text-gray-600">${message}</p>
+                <button onclick="closeModal()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 w-full">Close</button>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('feedback-modal').classList.add('hidden');
+        }
+
+        function openAddModal(type) {
+            document.getElementById(`add-${type}-modal`).classList.remove('hidden');
+            if (type === 'cancellations') {
+                fetchAppointments();
+            }
+        }
+
+        function closeAddModal(type) {
+            document.getElementById(`add-${type}-modal`).classList.add('hidden');
+            document.getElementById(`add-${type}-form`).reset();
+            document.getElementById('appointment-details').classList.add('hidden');
+        }
+
+        function openEditModal(type, id, appointmentId, reason) {
+            document.getElementById(`edit-${type}-modal`).classList.remove('hidden');
+            document.getElementById(`edit-${type}-id`).value = id;
+            document.getElementById(`edit-${type}-appointment-id`).value = appointmentId;
+            document.getElementById(`edit-${type}-reason`).value = reason || '';
+        }
+
+        function closeEditModal(type) {
+            document.getElementById(`edit-${type}-modal`).classList.add('hidden');
+            document.getElementById(`edit-${type}-form`).reset();
+        }
+
+        async function submitForm(event, url, formId, entity) {
+            event.preventDefault();
+            const form = document.getElementById(formId);
+            const formData = new FormData(form);
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showModal('Success', `${entity} ${formId.includes('edit') ? 'updated' : 'created'} successfully!`);
+                    form.reset();
+                    if (formId.includes('add')) closeAddModal(formId.split('-')[1]);
+                    if (formId.includes('edit')) closeEditModal(formId.split('-')[1]);
+                    fetchAnalytics();
+                } else {
+                    showModal('Error', data.detail || `Failed to ${formId.includes('edit') ? 'update' : 'create'} ${entity}.`, 'error');
+                }
+            } catch (error) {
+                showModal('Error', `Failed to ${formId.includes('edit') ? 'update' : 'create'} ${entity}.`, 'error');
+            }
+        }
+
+        async function deleteEntity(id, entity, url) {
+            if (confirm(`Are you sure you want to delete this ${entity}?`)) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: new FormData().append(`${entity.toLowerCase()}_id`, id)
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        showModal('Success', `${entity} deleted successfully!`);
+                        fetchAnalytics();
+                    } else {
+                        showModal('Error', data.detail || `Failed to delete ${entity}.`, 'error');
+                    }
+                } catch (error) {
+                    showModal('Error', `Failed to delete ${entity}.`, 'error');
+                }
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAnalytics();
+        });
+    </script>
 </body>
-</html> 
+</html>

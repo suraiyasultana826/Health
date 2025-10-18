@@ -81,6 +81,17 @@ async def update_appointment(
         if not appointment:
             raise HTTPException(status_code=404, detail="Appointment not found")
         
+        # Check if this appointment has been cancelled
+        cancellation = db.query(database.Cancellation).filter(
+            database.Cancellation.appointment_id == appointment_id
+        ).first()
+        
+        if cancellation:
+            raise HTTPException(
+                status_code=400, 
+                detail="Cannot update a cancelled appointment. Please restore it first or create a new appointment."
+            )
+        
         # Store old slot ID
         old_slot_id = appointment.slot_id
         
@@ -132,6 +143,11 @@ async def update_appointment(
 
 @router.post("/delete")
 async def delete_appointment(appointment_id: int = Form(...)):
+    """
+    Delete an appointment without creating a cancellation record.
+    This is a hard delete - use with caution!
+    For cancellations with tracking, use the /cancellations/cancel-and-delete endpoint instead.
+    """
     db = SessionLocal()
     try:
         # Get the appointment
@@ -163,7 +179,7 @@ async def delete_appointment(appointment_id: int = Form(...)):
         
         return {
             "status": "success",
-            "message": "Appointment cancelled and slot is now available"
+            "message": "Appointment deleted and slot is now available"
         }
     except HTTPException:
         db.rollback()
@@ -172,5 +188,108 @@ async def delete_appointment(appointment_id: int = Form(...)):
         db.rollback()
         print(f"❌ Error deleting appointment: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        db.close()
+
+@router.post("/cancel")
+async def cancel_appointment(
+    appointment_id: int = Form(...),
+    reason: str = Form(None),
+    delete_appointment: bool = Form(False)
+):
+    """
+    Cancel an appointment with proper tracking.
+    
+    Args:
+        appointment_id: The appointment to cancel
+        reason: Reason for cancellation
+        delete_appointment: If True, deletes the appointment after recording cancellation
+    """
+    db = SessionLocal()
+    try:
+        # Check if appointment exists
+        appointment = db.query(database.Appointment).filter(
+            database.Appointment.id == appointment_id
+        ).first()
+        
+        if not appointment:
+            raise HTTPException(status_code=404, detail="Appointment not found")
+        
+        # Check if already cancelled
+        existing_cancellation = db.query(database.Cancellation).filter(
+            database.Cancellation.appointment_id == appointment_id
+        ).first()
+        
+        if existing_cancellation:
+            raise HTTPException(
+                status_code=400,
+                detail="This appointment has already been cancelled"
+            )
+        
+        # Get slot info
+        slot_id = appointment.slot_id
+        slot = db.query(database.AppointmentSlot).filter(
+            database.AppointmentSlot.id == slot_id
+        ).first()
+        
+        # Create cancellation record
+        cancellation = database.Cancellation(
+            appointment_id=appointment_id,
+            reason=reason or "Appointment cancelled",
+            cancelled_at=datetime.now()
+        )
+        db.add(cancellation)
+        db.flush()
+        
+        # Optionally delete the appointment
+        if delete_appointment:
+            db.delete(appointment)
+        
+        # Release the slot
+        if slot:
+            slot.is_available = True
+            print(f"✅ Slot released after cancellation: Slot ID={slot_id}")
+        
+        db.commit()
+        db.refresh(cancellation)
+        
+        print(f"✅ Appointment cancelled: ID={appointment_id}, Cancellation ID={cancellation.id}")
+        
+        return {
+            "status": "success",
+            "cancellation_id": cancellation.id,
+            "slot_released": True,
+            "slot_id": slot_id,
+            "appointment_deleted": delete_appointment,
+            "message": "Appointment cancelled successfully"
+        }
+        
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Error cancelling appointment: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        db.close()
+
+@router.get("/check-cancellation/{appointment_id}")
+async def check_cancellation(appointment_id: int):
+    """Check if an appointment has been cancelled"""
+    db = SessionLocal()
+    try:
+        cancellation = db.query(database.Cancellation).filter(
+            database.Cancellation.appointment_id == appointment_id
+        ).first()
+        
+        return {
+            "is_cancelled": cancellation is not None,
+            "cancellation": {
+                "id": cancellation.id,
+                "reason": cancellation.reason,
+                "cancelled_at": str(cancellation.cancelled_at)
+            } if cancellation else None
+        }
     finally:
         db.close()
