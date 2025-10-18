@@ -1,12 +1,28 @@
-<nav class="bg-blue-600 p-4 shadow-md">
+<nav class="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-4 shadow-lg">
     <div class="container mx-auto flex justify-between items-center">
-        <a href="/" class="text-white text-2xl font-bold">Healthcare Ticketing</a>
-        <div class="space-x-4">
-            <a href="/doctors" class="text-white hover:text-gray-200">Doctors</a>
-            <a href="/patients" class="text-white hover:text-gray-200">Patients</a>
-            <a href="/slots" class="text-white hover:text-gray-200">Slots</a>
-            <a href="/appointments" class="text-white hover:text-gray-200">Appointments</a>
-            <a href="/cancellations" class="text-white hover:text-gray-200">Cancellations</a>
+        <a href="/" class="text-white text-2xl font-bold flex items-center hover:scale-105 transition-transform">
+            <i class="fas fa-heartbeat mr-2"></i>
+            Healthcare Ticketing
+        </a>
+        <div class="space-x-6 flex items-center">
+            <a href="/booking" class="text-white hover:text-yellow-300 transition font-semibold flex items-center">
+                <i class="fas fa-calendar-plus mr-2"></i>Book Appointment
+            </a>
+            <a href="/doctors" class="text-white hover:text-yellow-300 transition">
+                <i class="fas fa-user-md mr-1"></i>Doctors
+            </a>
+            <a href="/patients" class="text-white hover:text-yellow-300 transition">
+                <i class="fas fa-user-injured mr-1"></i>Patients
+            </a>
+            <a href="/slots" class="text-white hover:text-yellow-300 transition">
+                <i class="fas fa-clock mr-1"></i>Slots
+            </a>
+            <a href="/appointments" class="text-white hover:text-yellow-300 transition">
+                <i class="fas fa-calendar-check mr-1"></i>Appointments
+            </a>
+            <a href="/cancellations" class="text-white hover:text-yellow-300 transition">
+                <i class="fas fa-times-circle mr-1"></i>Cancellations
+            </a>
         </div>
     </div>
 </nav>

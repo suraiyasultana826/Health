@@ -8,11 +8,119 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/static/scripts.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .doctor-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .doctor-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.25);
+        }
+        .specialty-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .filter-chip {
+            transition: all 0.3s;
+        }
+        .filter-chip:hover {
+            transform: scale(1.05);
+        }
+        .active-chip {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        .grid-view .doctor-card {
+            display: block;
+        }
+        .list-view .doctor-card {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen font-sans">
     {% include 'navbar.html' %}
-    <div class="container mx-auto p-6 max-w-5xl">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6">Manage Doctors</h1>
+    
+    <div class="container mx-auto p-8 max-w-7xl">
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 mb-4">
+                <i class="fas fa-user-md mr-3"></i>Doctor Management
+            </h1>
+            <p class="text-xl text-gray-600">Manage your healthcare professionals efficiently</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold mb-1">Total Doctors</p>
+                        <h3 class="text-4xl font-bold text-gray-800" id="total-doctors-stat">0</h3>
+                    </div>
+                    <div class="bg-blue-100 rounded-full p-4">
+                        <i class="fas fa-user-md text-3xl text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold mb-1">Specialties</p>
+                        <h3 class="text-4xl font-bold text-gray-800" id="total-specialties">0</h3>
+                    </div>
+                    <div class="bg-green-100 rounded-full p-4">
+                        <i class="fas fa-stethoscope text-3xl text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold mb-1">Available Today</p>
+                        <h3 class="text-4xl font-bold text-gray-800" id="available-today">0</h3>
+                    </div>
+                    <div class="bg-purple-100 rounded-full p-4">
+                        <i class="fas fa-calendar-check text-3xl text-purple-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-pink-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold mb-1">Avg Rating</p>
+                        <h3 class="text-4xl font-bold text-gray-800">4.8</h3>
+                    </div>
+                    <div class="bg-pink-100 rounded-full p-4">
+                        <i class="fas fa-star text-3xl text-pink-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Feedback Modal -->
         <div id="feedback-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
@@ -23,20 +131,41 @@
 
         <!-- Add Doctor Modal -->
         <div id="add-doctors-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full transform transition-all">
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Add Doctor</h2>
+            <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-user-plus mr-3 text-blue-600"></i>Add New Doctor
+                </h2>
                 <form id="add-doctors-form" onsubmit="submitForm(event, '/doctors/', 'add-doctors-form', 'Doctor')">
-                    <div class="mb-4">
-                        <label class="block text-gray-600 text-sm font-medium mb-1">Name</label>
-                        <input type="text" name="name" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <i class="fas fa-user mr-2"></i>Doctor Name
+                        </label>
+                        <input type="text" name="name" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="Dr. John Doe" required>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-600 text-sm font-medium mb-1">Specialty</label>
-                        <input type="text" name="specialty" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <i class="fas fa-stethoscope mr-2"></i>Specialty
+                        </label>
+                        <select name="specialty" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" required>
+                            <option value="">Select Specialty</option>
+                            <option value="Cardiology">Cardiology</option>
+                            <option value="Dermatology">Dermatology</option>
+                            <option value="Neurology">Neurology</option>
+                            <option value="Orthopedics">Orthopedics</option>
+                            <option value="Pediatrics">Pediatrics</option>
+                            <option value="Psychiatry">Psychiatry</option>
+                            <option value="Radiology">Radiology</option>
+                            <option value="Surgery">Surgery</option>
+                            <option value="Other">Other</option>
+                        </select>
                     </div>
-                    <div class="flex justify-end space-x-2">
-                        <button type="button" onclick="closeAddModal('doctors')" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">Cancel</button>
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Add Doctor</button>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeAddModal('doctors')" class="bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-semibold">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition font-semibold shadow-lg">
+                            <i class="fas fa-plus mr-2"></i>Add Doctor
+                        </button>
                     </div>
                 </form>
             </div>
@@ -44,83 +173,372 @@
 
         <!-- Edit Doctor Modal -->
         <div id="edit-doctors-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full transform transition-all">
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Edit Doctor</h2>
+            <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-edit mr-3 text-purple-600"></i>Edit Doctor
+                </h2>
                 <form id="edit-doctors-form" onsubmit="submitForm(event, '/doctors/update', 'edit-doctors-form', 'Doctor')">
                     <input type="hidden" name="doctor_id" id="edit-doctors-id">
-                    <div class="mb-4">
-                        <label class="block text-gray-600 text-sm font-medium mb-1">Name</label>
-                        <input type="text" name="name" id="edit-doctors-name" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <i class="fas fa-user mr-2"></i>Doctor Name
+                        </label>
+                        <input type="text" name="name" id="edit-doctors-name" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition" required>
                     </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-600 text-sm font-medium mb-1">Specialty</label>
-                        <input type="text" name="specialty" id="edit-doctors-specialty" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">
+                            <i class="fas fa-stethoscope mr-2"></i>Specialty
+                        </label>
+                        <select name="specialty" id="edit-doctors-specialty" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition" required>
+                            <option value="Cardiology">Cardiology</option>
+                            <option value="Dermatology">Dermatology</option>
+                            <option value="Neurology">Neurology</option>
+                            <option value="Orthopedics">Orthopedics</option>
+                            <option value="Pediatrics">Pediatrics</option>
+                            <option value="Psychiatry">Psychiatry</option>
+                            <option value="Radiology">Radiology</option>
+                            <option value="Surgery">Surgery</option>
+                            <option value="Other">Other</option>
+                        </select>
                     </div>
-                    <div class="flex justify-end space-x-2">
-                        <button type="button" onclick="closeEditModal('doctors')" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">Cancel</button>
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Update Doctor</button>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeEditModal('doctors')" class="bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 transition font-semibold">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-semibold shadow-lg">
+                            <i class="fas fa-save mr-2"></i>Update Doctor
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Search and Filter -->
-        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Doctors List</h2>
-            <div class="flex flex-col md:flex-row md:items-end md:space-x-4 mb-4">
-                <div class="mb-4 md:mb-0 md:flex-1">
-                    <label class="block text-gray-600 text-sm font-medium mb-1">Search by Name</label>
-                    <input type="text" id="search-doctors" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" placeholder="Enter doctor name" oninput="filterList('doctors')">
+        <!-- Search, Filter, and Actions -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6">
+                <div class="flex-1">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                        <i class="fas fa-search mr-2"></i>Search Doctors
+                    </label>
+                    <input 
+                        type="text" 
+                        id="search-doctors" 
+                        class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm" 
+                        placeholder="Search by name..."
+                        oninput="filterList('doctors')"
+                    >
                 </div>
-                <div class="mb-4 md:mb-0 md:flex-1">
-                    <label class="block text-gray-600 text-sm font-medium mb-1">Filter by Specialty</label>
-                    <select id="filter-doctors" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" onchange="filterList('doctors')">
+
+                <div class="flex-1">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                        <i class="fas fa-filter mr-2"></i>Filter by Specialty
+                    </label>
+                    <select 
+                        id="filter-doctors" 
+                        class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm" 
+                        onchange="filterList('doctors')"
+                    >
                         <option value="">All Specialties</option>
-                        {% for doctor in doctors %}
-                        <option value="{{ doctor.specialty }}">{{ doctor.specialty }}</option>
-                        {% endfor %}
                     </select>
                 </div>
-                <button onclick="openAddModal('doctors')" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center">
-                    <i class="fas fa-user-plus mr-2"></i>Add Doctor
-                </button>
+
+                <div class="flex items-end space-x-3">
+                    <button 
+                        onclick="toggleView()" 
+                        class="bg-gray-200 text-gray-700 px-6 py-4 rounded-lg hover:bg-gray-300 transition font-semibold shadow-sm"
+                        title="Toggle View"
+                    >
+                        <i class="fas fa-th" id="view-icon"></i>
+                    </button>
+                    <button 
+                        onclick="openAddModal('doctors')" 
+                        class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition font-semibold shadow-lg"
+                    >
+                        <i class="fas fa-plus mr-2"></i>Add Doctor
+                    </button>
+                </div>
             </div>
 
-            <!-- Doctors List -->
-            <div id="doctors-list">
-                {% if doctors %}
-                <table id="doctors-table" class="w-full bg-white shadow-md rounded-lg overflow-hidden">
-                    <thead class="bg-gray-200">
-                        <tr>
-                            <th class="p-3 text-left">ID</th>
-                            <th class="p-3 text-left">Name</th>
-                            <th class="p-3 text-left">Specialty</th>
-                            <th class="p-3 text-left">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for doctor in doctors %}
-                        <tr class="border-t" data-name="{{ doctor.name }}" data-filter="{{ doctor.specialty }}">
-                            <td class="p-3">{{ doctor.id }}</td>
-                            <td class="p-3">{{ doctor.name }}</td>
-                            <td class="p-3">{{ doctor.specialty }}</td>
-                            <td class="p-3 flex space-x-2">
-                                <button onclick="openEditModal('doctors', {{ doctor.id }}, '{{ doctor.name | e }}', '{{ doctor.specialty | e }}')" class="text-blue-600 hover:text-blue-800">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="deleteEntity({{ doctor.id }}, 'Doctor', '/doctors/delete')" class="text-red-600 hover:text-red-800">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p class="text-gray-600">No doctors found.</p>
-                {% endif %}
+            <!-- Specialty Filter Chips -->
+            <div class="flex flex-wrap gap-2 mb-6" id="specialty-chips">
+                <!-- Chips will be dynamically added here -->
+            </div>
+
+            <!-- View Toggle Info -->
+            <div class="flex items-center justify-between text-sm text-gray-600 mb-4">
+                <span id="doctor-count">Showing 0 doctors</span>
+                <span id="current-view" class="font-semibold">Grid View</span>
+            </div>
+        </div>
+
+        <!-- Doctors Display -->
+        <div id="doctors-list" class="mb-8">
+            <div id="doctors-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 grid-view">
+                <!-- Doctor cards will be inserted here -->
+            </div>
+            <div id="no-doctors" class="hidden text-center py-12">
+                <i class="fas fa-user-md text-6xl text-gray-300 mb-4"></i>
+                <p class="text-xl text-gray-600">No doctors found</p>
             </div>
         </div>
     </div>
+
+    <script>
+        let currentView = 'grid';
+        let allDoctors = [];
+
+        // Toggle between grid and list view
+        function toggleView() {
+            const container = document.getElementById('doctors-container');
+            const viewIcon = document.getElementById('view-icon');
+            const viewText = document.getElementById('current-view');
+            
+            if (currentView === 'grid') {
+                currentView = 'list';
+                container.classList.remove('grid-view', 'grid', 'md:grid-cols-2', 'lg:grid-cols-3');
+                container.classList.add('list-view', 'space-y-4');
+                viewIcon.className = 'fas fa-list';
+                viewText.textContent = 'List View';
+            } else {
+                currentView = 'grid';
+                container.classList.remove('list-view', 'space-y-4');
+                container.classList.add('grid-view', 'grid', 'md:grid-cols-2', 'lg:grid-cols-3');
+                viewIcon.className = 'fas fa-th';
+                viewText.textContent = 'Grid View';
+            }
+        }
+
+        // Load and display doctors
+        async function loadDoctors() {
+            try {
+                const response = await fetch('/doctors/list');
+                allDoctors = await response.json();
+                
+                // Update statistics
+                document.getElementById('total-doctors-stat').textContent = allDoctors.length;
+                
+                const specialties = [...new Set(allDoctors.map(d => d.specialty))];
+                document.getElementById('total-specialties').textContent = specialties.length;
+                
+                // Populate specialty filter
+                const filterSelect = document.getElementById('filter-doctors');
+                filterSelect.innerHTML = '<option value="">All Specialties</option>';
+                specialties.forEach(specialty => {
+                    const option = document.createElement('option');
+                    option.value = specialty;
+                    option.textContent = specialty;
+                    filterSelect.appendChild(option);
+                });
+
+                // Create specialty chips
+                createSpecialtyChips(specialties);
+                
+                // Display doctors
+                displayDoctors(allDoctors);
+                
+                // Load availability data
+                await loadAvailability();
+            } catch (error) {
+                console.error('Error loading doctors:', error);
+            }
+        }
+
+        // Create specialty filter chips
+        function createSpecialtyChips(specialties) {
+            const chipsContainer = document.getElementById('specialty-chips');
+            chipsContainer.innerHTML = `
+                <button onclick="filterBySpecialty('')" class="filter-chip active-chip px-4 py-2 rounded-full text-sm font-semibold shadow-md">
+                    All
+                </button>
+            `;
+            
+            const specialtyColors = {
+                'Cardiology': 'bg-red-100 text-red-800 hover:bg-red-200',
+                'Dermatology': 'bg-pink-100 text-pink-800 hover:bg-pink-200',
+                'Neurology': 'bg-purple-100 text-purple-800 hover:bg-purple-200',
+                'Orthopedics': 'bg-blue-100 text-blue-800 hover:bg-blue-200',
+                'Pediatrics': 'bg-green-100 text-green-800 hover:bg-green-200',
+                'Psychiatry': 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200',
+                'Radiology': 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
+                'Surgery': 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+            };
+
+            specialties.forEach(specialty => {
+                const colorClass = specialtyColors[specialty] || 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+                const chip = document.createElement('button');
+                chip.onclick = () => filterBySpecialty(specialty);
+                chip.className = `filter-chip ${colorClass} px-4 py-2 rounded-full text-sm font-semibold shadow-md`;
+                chip.textContent = specialty;
+                chipsContainer.appendChild(chip);
+            });
+        }
+
+        // Filter by specialty using chips
+        function filterBySpecialty(specialty) {
+            const filterSelect = document.getElementById('filter-doctors');
+            filterSelect.value = specialty;
+            filterList('doctors');
+
+            // Update active chip
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.classList.remove('active-chip');
+            });
+            event.target.classList.add('active-chip');
+        }
+
+        // Display doctors
+        function displayDoctors(doctors) {
+            const container = document.getElementById('doctors-container');
+            const noDoctors = document.getElementById('no-doctors');
+            const doctorCount = document.getElementById('doctor-count');
+
+            if (doctors.length === 0) {
+                container.innerHTML = '';
+                noDoctors.classList.remove('hidden');
+                doctorCount.textContent = 'Showing 0 doctors';
+                return;
+            }
+
+            noDoctors.classList.add('hidden');
+            doctorCount.textContent = `Showing ${doctors.length} doctor${doctors.length > 1 ? 's' : ''}`;
+
+            const specialtyIcons = {
+                'Cardiology': 'fa-heart',
+                'Dermatology': 'fa-hand-sparkles',
+                'Neurology': 'fa-brain',
+                'Orthopedics': 'fa-bone',
+                'Pediatrics': 'fa-baby',
+                'Psychiatry': 'fa-head-side-virus',
+                'Radiology': 'fa-x-ray',
+                'Surgery': 'fa-user-md'
+            };
+
+            const specialtyColors = {
+                'Cardiology': 'from-red-500 to-pink-500',
+                'Dermatology': 'from-pink-500 to-rose-500',
+                'Neurology': 'from-purple-500 to-indigo-500',
+                'Orthopedics': 'from-blue-500 to-cyan-500',
+                'Pediatrics': 'from-green-500 to-emerald-500',
+                'Psychiatry': 'from-indigo-500 to-purple-500',
+                'Radiology': 'from-yellow-500 to-orange-500',
+                'Surgery': 'from-orange-500 to-red-500'
+            };
+
+            container.innerHTML = doctors.map((doctor, index) => {
+                const icon = specialtyIcons[doctor.specialty] || 'fa-stethoscope';
+                const gradient = specialtyColors[doctor.specialty] || 'from-gray-500 to-gray-600';
+                const rating = (4.5 + Math.random() * 0.5).toFixed(1);
+                const patients = Math.floor(Math.random() * 500) + 100;
+
+                return `
+                    <div class="doctor-card bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 fade-in-up" style="animation-delay: ${index * 0.1}s" data-name="${doctor.name.toLowerCase()}" data-filter="${doctor.specialty}">
+                        <div class="bg-gradient-to-r ${gradient} p-6 text-white">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="bg-white bg-opacity-20 rounded-full w-16 h-16 flex items-center justify-center">
+                                    <i class="fas ${icon} text-3xl"></i>
+                                </div>
+                                <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-semibold">
+                                    ID: ${doctor.id}
+                                </span>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-2">${doctor.name}</h3>
+                            <p class="text-white text-opacity-90 font-semibold">${doctor.specialty}</p>
+                        </div>
+                        
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-1">
+                                    ${[1,2,3,4,5].map(i => `<i class="fas fa-star ${i <= Math.floor(rating) ? 'text-yellow-400' : 'text-gray-300'}"></i>`).join('')}
+                                    <span class="text-gray-600 font-semibold ml-2">${rating}</span>
+                                </div>
+                                <span class="text-sm text-gray-600">
+                                    <i class="fas fa-users mr-1"></i>${patients} patients
+                                </span>
+                            </div>
+
+                            <div class="space-y-2 mb-4">
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i class="fas fa-calendar-check w-5 text-green-600"></i>
+                                    <span class="ml-2" id="availability-${doctor.id}">Loading...</span>
+                                </div>
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i class="fas fa-clock w-5 text-blue-600"></i>
+                                    <span class="ml-2">Available Today</span>
+                                </div>
+                            </div>
+
+                            <div class="flex space-x-2">
+                                <button onclick="openEditModal('doctors', ${doctor.id}, '${doctor.name.replace(/'/g, "\\'")}', '${doctor.specialty.replace(/'/g, "\\'")}'); event.stopPropagation();" class="flex-1 bg-blue-100 text-blue-600 px-4 py-3 rounded-lg hover:bg-blue-200 transition font-semibold">
+                                    <i class="fas fa-edit mr-2"></i>Edit
+                                </button>
+                                <button onclick="deleteEntity(${doctor.id}, 'Doctor', '/doctors/delete'); event.stopPropagation();" class="flex-1 bg-red-100 text-red-600 px-4 py-3 rounded-lg hover:bg-red-200 transition font-semibold">
+                                    <i class="fas fa-trash mr-2"></i>Delete
+                                </button>
+                            </div>
+
+                            <button onclick="window.location.href='/booking?doctor_id=${doctor.id}'" class="w-full mt-3 bg-gradient-to-r ${gradient} text-white px-4 py-3 rounded-lg hover:opacity-90 transition font-semibold shadow-md">
+                                <i class="fas fa-calendar-plus mr-2"></i>Book Appointment
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Load availability data
+        async function loadAvailability() {
+            try {
+                const slots = await fetch('/appointment_slots/list').then(r => r.json());
+                const today = new Date().toISOString().split('T')[0];
+                
+                let availableToday = 0;
+                allDoctors.forEach(doctor => {
+                    const doctorSlots = slots.filter(s => s.doctor_id === doctor.id && s.date === today && s.is_available);
+                    const availEl = document.getElementById(`availability-${doctor.id}`);
+                    if (availEl) {
+                        if (doctorSlots.length > 0) {
+                            availEl.textContent = `${doctorSlots.length} slots available`;
+                            availEl.classList.add('text-green-600', 'font-semibold');
+                            availableToday++;
+                        } else {
+                            availEl.textContent = 'No slots available';
+                            availEl.classList.add('text-gray-500');
+                        }
+                    }
+                });
+
+                document.getElementById('available-today').textContent = availableToday;
+            } catch (error) {
+                console.error('Error loading availability:', error);
+            }
+        }
+
+        // Enhanced filter function
+        function filterList(entity) {
+            const searchInput = document.getElementById(`search-${entity}`);
+            const filterSelect = document.getElementById(`filter-${entity}`);
+            
+            if (!searchInput) return;
+            
+            const searchValue = searchInput.value.toLowerCase();
+            const filterValue = filterSelect ? filterSelect.value : '';
+            
+            const filtered = allDoctors.filter(doctor => {
+                const matchesSearch = doctor.name.toLowerCase().includes(searchValue);
+                const matchesFilter = filterValue === '' || doctor.specialty === filterValue;
+                return matchesSearch && matchesFilter;
+            });
+
+            displayDoctors(filtered);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDoctors();
+            
+            // Refresh every 30 seconds
+            setInterval(loadAvailability, 30000);
+        });
+    </script>
 </body>
-</html
+</html>

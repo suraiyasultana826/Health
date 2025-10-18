@@ -6,33 +6,940 @@
     <title>Healthcare Ticketing System</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .card-hover {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .7; }
+        }
+        .slide-in {
+            animation: slideIn 0.5s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .calendar-day {
+            transition: all 0.3s;
+        }
+        .calendar-day:hover {
+            transform: scale(1.1);
+        }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen font-sans">
     {% include 'navbar.html' %}
-    <div class="container mx-auto p-6 max-w-5xl">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6">Healthcare Ticketing System</h1>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <a href="/doctors" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg">
-                <h2 class="text-xl font-semibold text-gray-700">Manage Doctors</h2>
-                <p class="text-gray-600">Add, update, or delete doctors.</p>
+    
+    <div class="container mx-auto p-8 max-w-7xl">
+        <!-- Hero Section with Search -->
+        <div class="text-center mb-12 mt-8">
+            <div id="greeting" class="text-2xl text-gray-600 mb-4"></div>
+            <h1 class="text-6xl font-bold gradient-text mb-6">
+                Healthcare Ticketing System
+            </h1>
+            <p class="text-2xl text-gray-600 mb-8">
+                Modern healthcare management at your fingertips
+            </p>
+            
+            <!-- Hero Search Bar -->
+            <div class="max-w-3xl mx-auto mb-8">
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="hero-search"
+                        placeholder="Find a doctor by name or specialty..."
+                        class="w-full p-5 pr-32 text-lg border-2 border-purple-300 rounded-full focus:ring-4 focus:ring-purple-300 focus:border-purple-500 shadow-lg"
+                        onkeyup="heroSearch()"
+                    >
+                    <button class="absolute right-2 top-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full hover:from-blue-700 hover:to-purple-700 transition">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div id="search-suggestions" class="mt-2 bg-white rounded-lg shadow-lg hidden max-h-64 overflow-y-auto"></div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <a href="/booking" class="bg-gradient-to-r from-red-500 to-pink-600 text-white px-8 py-4 rounded-full hover:from-red-600 hover:to-pink-700 transition shadow-lg font-semibold pulse-animation">
+                    <i class="fas fa-exclamation-circle mr-2"></i>Book Urgent Appointment
+                </a>
+                <button onclick="openQuickRegister()" class="bg-gradient-to-r from-green-500 to-teal-600 text-white px-8 py-4 rounded-full hover:from-green-600 hover:to-teal-700 transition shadow-lg font-semibold">
+                    <i class="fas fa-user-plus mr-2"></i>Quick Register Patient
+                </button>
+                <a href="/appointments" class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 py-4 rounded-full hover:from-blue-600 hover:to-indigo-700 transition shadow-lg font-semibold">
+                    <i class="fas fa-calendar-day mr-2"></i>Today's Schedule
+                </a>
+            </div>
+        </div>
+
+        <!-- System Alerts/Notifications Banner -->
+        <div id="alerts-banner" class="mb-8">
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded-lg shadow-md">
+                <div class="flex items-center">
+                    <i class="fas fa-bullhorn text-yellow-600 text-2xl mr-4"></i>
+                    <div>
+                        <p class="font-semibold text-yellow-800">System Announcement</p>
+                        <p class="text-yellow-700">Welcome to the enhanced Healthcare Ticketing System! New features include advanced search and analytics.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-Time Statistics Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-blue-500 card-hover">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <i class="fas fa-user-md text-5xl text-blue-500 mb-3"></i>
+                        <h3 class="text-4xl font-bold text-gray-800 mb-2" id="total-doctors">0</h3>
+                        <p class="text-gray-600 font-semibold">Total Doctors</p>
+                    </div>
+                    <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">Active</span>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-green-500 card-hover">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <i class="fas fa-user-injured text-5xl text-green-500 mb-3"></i>
+                        <h3 class="text-4xl font-bold text-gray-800 mb-2" id="total-patients">0</h3>
+                        <p class="text-gray-600 font-semibold">Total Patients</p>
+                    </div>
+                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">Registered</span>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-purple-500 card-hover">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <i class="fas fa-calendar-check text-5xl text-purple-500 mb-3"></i>
+                        <h3 class="text-4xl font-bold text-gray-800 mb-2" id="today-appointments">0</h3>
+                        <p class="text-gray-600 font-semibold">Today's Appointments</p>
+                    </div>
+                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-semibold">Today</span>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-pink-500 card-hover">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <i class="fas fa-clock text-5xl text-pink-500 mb-3"></i>
+                        <h3 class="text-4xl font-bold text-gray-800 mb-2" id="available-slots">0</h3>
+                        <p class="text-gray-600 font-semibold">Available Slots</p>
+                    </div>
+                    <span class="bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-sm font-semibold">Open</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+                <i class="fas fa-percentage text-3xl mb-2"></i>
+                <h3 class="text-3xl font-bold mb-1" id="utilization-rate">0%</h3>
+                <p class="text-blue-100">Utilization Rate</p>
+            </div>
+            <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+                <i class="fas fa-smile text-3xl mb-2"></i>
+                <h3 class="text-3xl font-bold mb-1">98.5%</h3>
+                <p class="text-green-100">Satisfaction Rate</p>
+            </div>
+            <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+                <i class="fas fa-hourglass-half text-3xl mb-2"></i>
+                <h3 class="text-3xl font-bold mb-1">2.3 days</h3>
+                <p class="text-orange-100">Avg Wait Time</p>
+            </div>
+            <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg p-6 text-white">
+                <i class="fas fa-user-times text-3xl mb-2"></i>
+                <h3 class="text-3xl font-bold mb-1" id="cancellation-rate">0%</h3>
+                <p class="text-red-100">Cancellation Rate</p>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+            <!-- Recent Activity Feed -->
+            <div class="lg:col-span-1 bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-stream mr-3 text-blue-600"></i>
+                    Recent Activity
+                </h2>
+                <div id="activity-feed" class="space-y-4 max-h-96 overflow-y-auto">
+                    <!-- Activity items will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Mini Calendar Widget -->
+            <div class="lg:col-span-1 bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-calendar-alt mr-3 text-purple-600"></i>
+                    Appointment Calendar
+                </h2>
+                <div id="mini-calendar" class="grid grid-cols-7 gap-2">
+                    <!-- Calendar will be generated here -->
+                </div>
+                <div class="mt-4 flex justify-between text-sm">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                        <span class="text-gray-600">Available</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
+                        <span class="text-gray-600">Moderate</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
+                        <span class="text-gray-600">Busy</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Appointments -->
+            <div class="lg:col-span-1 bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-bell mr-3 text-pink-600"></i>
+                    Upcoming Soon
+                </h2>
+                <div id="upcoming-appointments" class="space-y-4 max-h-96 overflow-y-auto">
+                    <!-- Upcoming appointments will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-chart-line mr-3 text-blue-600"></i>
+                    Appointments Over Time
+                </h2>
+                <canvas id="appointments-chart"></canvas>
+            </div>
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-chart-pie mr-3 text-purple-600"></i>
+                    Appointments by Specialty
+                </h2>
+                <canvas id="specialty-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Time Slots Availability Indicator -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-clock mr-3 text-green-600"></i>
+                Today's Time Slot Availability
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <i class="fas fa-sun text-5xl text-yellow-500 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Morning (6AM - 12PM)</h3>
+                    <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                        <div id="morning-bar" class="bg-green-500 h-4 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p class="text-gray-600"><span id="morning-percent">0</span>% Available</p>
+                </div>
+                <div class="text-center">
+                    <i class="fas fa-cloud-sun text-5xl text-orange-500 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Afternoon (12PM - 6PM)</h3>
+                    <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                        <div id="afternoon-bar" class="bg-yellow-500 h-4 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p class="text-gray-600"><span id="afternoon-percent">0</span>% Available</p>
+                </div>
+                <div class="text-center">
+                    <i class="fas fa-moon text-5xl text-indigo-500 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Evening (6PM - 12AM)</h3>
+                    <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                        <div id="evening-bar" class="bg-blue-500 h-4 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p class="text-gray-600"><span id="evening-percent">0</span>% Available</p>
+                </div>
+            </div>
+            <div class="mt-6 text-center">
+                <p class="text-lg text-green-600 font-semibold">
+                    <i class="fas fa-lightbulb mr-2"></i>Best time to book: <span id="best-time">Morning</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Popular Specialties Section -->
+        <div class="mb-12">
+            <h2 class="text-4xl font-bold text-center text-gray-800 mb-10">
+                <i class="fas fa-star mr-3 text-yellow-500"></i>Popular Specialties
+            </h2>
+            <div id="popular-specialties" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <!-- Specialty cards will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Doctor Spotlight -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-8 flex items-center justify-center">
+                <i class="fas fa-award mr-3 text-yellow-500"></i>
+                Doctor Spotlight
+            </h2>
+            <div id="doctor-spotlight" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Featured doctors will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Management Features -->
+        <h2 class="text-4xl font-bold text-center text-gray-800 mb-10">
+            <i class="fas fa-cogs mr-3 text-gray-600"></i>Management Features
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            <a href="/booking" class="card-hover bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-2xl overflow-hidden">
+                <div class="p-8 text-white">
+                    <div class="bg-white bg-opacity-20 rounded-full w-20 h-20 flex items-center justify-center mb-6">
+                        <i class="fas fa-calendar-plus text-4xl"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold mb-4">Book Appointment</h2>
+                    <p class="text-lg mb-6 text-blue-100">Search doctors by specialty, check availability, and book appointments instantly</p>
+                    <div class="flex items-center text-sm font-semibold">
+                        <span>Get Started</span>
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </div>
+                </div>
             </a>
-            <a href="/patients" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg">
-                <h2 class="text-xl font-semibold text-gray-700">Manage Patients</h2>
-                <p class="text-gray-600">Add, update, or delete patients.</p>
+
+            <a href="/doctors" class="card-hover bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-gray-100">
+                <div class="p-8">
+                    <div class="bg-blue-100 rounded-full w-20 h-20 flex items-center justify-center mb-6">
+                        <i class="fas fa-user-md text-4xl text-blue-600"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Manage Doctors</h2>
+                    <p class="text-lg text-gray-600 mb-6">Add, update, or remove doctors and their specialties</p>
+                    <div class="flex items-center text-blue-600 font-semibold">
+                        <span>View Doctors</span>
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </div>
+                </div>
             </a>
-            <a href="/slots" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg">
-                <h2 class="text-xl font-semibold text-gray-700">Manage Slots</h2>
-                <p class="text-gray-600">Create or update appointment slots.</p>
+
+            <a href="/patients" class="card-hover bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-gray-100">
+                <div class="p-8">
+                    <div class="bg-green-100 rounded-full w-20 h-20 flex items-center justify-center mb-6">
+                        <i class="fas fa-user-injured text-4xl text-green-600"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Manage Patients</h2>
+                    <p class="text-lg text-gray-600 mb-6">Maintain patient records and contact information</p>
+                    <div class="flex items-center text-green-600 font-semibold">
+                        <span>View Patients</span>
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </div>
+                </div>
             </a>
-            <a href="/appointments" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg">
-                <h2 class="text-xl font-semibold text-gray-700">Manage Appointments</h2>
-                <p class="text-gray-600">Book or update appointments.</p>
+
+            <a href="/slots" class="card-hover bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-gray-100">
+                <div class="p-8">
+                    <div class="bg-purple-100 rounded-full w-20 h-20 flex items-center justify-center mb-6">
+                        <i class="fas fa-clock text-4xl text-purple-600"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Manage Slots</h2>
+                    <p class="text-lg text-gray-600 mb-6">Create and manage appointment time slots for doctors</p>
+                    <div class="flex items-center text-purple-600 font-semibold">
+                        <span>View Slots</span>
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </div>
+                </div>
             </a>
-            <a href="/cancellations" class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg">
-                <h2 class="text-xl font-semibold text-gray-700">Manage Cancellations</h2>
-                <p class="text-gray-600">Record or update cancellations.</p>
+
+            <a href="/appointments" class="card-hover bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-gray-100">
+                <div class="p-8">
+                    <div class="bg-pink-100 rounded-full w-20 h-20 flex items-center justify-center mb-6">
+                        <i class="fas fa-calendar-check text-4xl text-pink-600"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">View Appointments</h2>
+                    <p class="text-lg text-gray-600 mb-6">Track and manage all scheduled appointments</p>
+                    <div class="flex items-center text-pink-600 font-semibold">
+                        <span>View Appointments</span>
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </div>
+                </div>
+            </a>
+
+            <a href="/cancellations" class="card-hover bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-gray-100">
+                <div class="p-8">
+                    <div class="bg-red-100 rounded-full w-20 h-20 flex items-center justify-center mb-6">
+                        <i class="fas fa-times-circle text-4xl text-red-600"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-4">Track Cancellations</h2>
+                    <p class="text-lg text-gray-600 mb-6">Monitor and manage appointment cancellations</p>
+                    <div class="flex items-center text-red-600 font-semibold">
+                        <span>View Cancellations</span>
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </div>
+                </div>
             </a>
         </div>
+
+        <!-- Quick Links -->
+        <div class="bg-gradient-to-r from-gray-700 to-gray-900 rounded-2xl shadow-xl p-8 text-white mb-12">
+            <h2 class="text-3xl font-bold mb-6 text-center">
+                <i class="fas fa-link mr-3"></i>Quick Links
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button class="bg-white bg-opacity-20 hover:bg-opacity-30 p-4 rounded-lg transition text-center">
+                    <i class="fas fa-file-alt text-3xl mb-2"></i>
+                    <p>Generate Reports</p>
+                </button>
+                <button class="bg-white bg-opacity-20 hover:bg-opacity-30 p-4 rounded-lg transition text-center">
+                    <i class="fas fa-download text-3xl mb-2"></i>
+                    <p>Export Data</p>
+                </button>
+                <button class="bg-white bg-opacity-20 hover:bg-opacity-30 p-4 rounded-lg transition text-center">
+                    <i class="fas fa-chart-bar text-3xl mb-2"></i>
+                    <p>Analytics Dashboard</p>
+                </button>
+                <button class="bg-white bg-opacity-20 hover:bg-opacity-30 p-4 rounded-lg transition text-center">
+                    <i class="fas fa-cog text-3xl mb-2"></i>
+                    <p>Settings</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-6">
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-4">Contact Us</h3>
+                    <p class="text-gray-600"><i class="fas fa-phone mr-2"></i>+1 (555) 123-4567</p>
+                    <p class="text-gray-600"><i class="fas fa-envelope mr-2"></i>info@healthcare.com</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-4">Quick Access</h3>
+                    <p class="text-gray-600"><a href="/booking" class="hover:text-blue-600">Book Now</a></p>
+                    <p class="text-gray-600"><a href="/doctors" class="hover:text-blue-600">Find Doctors</a></p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-4">Information</h3>
+                    <p class="text-gray-600"><a href="#" class="hover:text-blue-600">Privacy Policy</a></p>
+                    <p class="text-gray-600"><a href="#" class="hover:text-blue-600">Terms of Service</a></p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-4">Follow Us</h3>
+                    <div class="flex justify-center space-x-4">
+                        <a href="#" class="text-blue-600 hover:text-blue-800 text-2xl"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-blue-400 hover:text-blue-600 text-2xl"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-pink-600 hover:text-pink-800 text-2xl"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <p class="text-gray-600 border-t pt-4">&copy; 2025 Healthcare Ticketing System. All rights reserved.</p>
+        </footer>
     </div>
+
+    <!-- Quick Register Modal -->
+    <div id="quick-register-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Quick Register Patient</h2>
+            <form id="quick-register-form" onsubmit="quickRegisterPatient(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-semibold mb-2">Name</label>
+                    <input type="text" name="name" required class="w-full p-3 border-2 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-semibold mb-2">Email</label>
+                    <input type="email" name="email" required class="w-full p-3 border-2 rounded-lg focus:ring-2 focus:ring-green-500">
+                </div>
+                <div class="flex space-x-4">
+                    <button type="button" onclick="closeQuickRegister()" class="flex-1 bg-gray-300 text-gray-800 py-3 rounded-lg hover:bg-gray-400 transition font-semibold">Cancel</button>
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white py-3 rounded-lg hover:from-green-600 hover:to-teal-700 transition font-semibold">Register</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Time-based greeting
+        function updateGreeting() {
+            const hour = new Date().getHours();
+            const greetingEl = document.getElementById('greeting');
+            let greeting = '';
+            
+            if (hour < 12) greeting = '☀️ Good Morning!';
+            else if (hour < 18) greeting = '🌤️ Good Afternoon!';
+            else greeting = '🌙 Good Evening!';
+            
+            greetingEl.textContent = greeting;
+        }
+
+        // Load statistics
+        async function loadStatistics() {
+            try {
+                const [doctors, patients, slots, appointments] = await Promise.all([
+                    fetch('/doctors/list').then(r => r.json()),
+                    fetch('/patients/list').then(r => r.json()),
+                    fetch('/appointment_slots/list').then(r => r.json()),
+                    fetch('/appointments/list').then(r => r.json())
+                ]);
+
+                document.getElementById('total-doctors').textContent = doctors.length;
+                document.getElementById('total-patients').textContent = patients.length;
+                
+                const today = new Date().toISOString().split('T')[0];
+                const todaySlots = slots.filter(s => s.date === today);
+                const availableSlots = todaySlots.filter(s => s.is_available);
+                
+                document.getElementById('available-slots').textContent = availableSlots.length;
+                document.getElementById('today-appointments').textContent = todaySlots.length - availableSlots.length;
+
+                // Calculate utilization rate
+                const totalSlots = slots.length;
+                const bookedSlots = slots.filter(s => !s.is_available).length;
+                const utilizationRate = totalSlots > 0 ? ((bookedSlots / totalSlots) * 100).toFixed(1) : 0;
+                document.getElementById('utilization-rate').textContent = utilizationRate + '%';
+
+                // Calculate cancellation rate (mock data)
+                const cancellationRate = ((Math.random() * 5) + 2).toFixed(1);
+                document.getElementById('cancellation-rate').textContent = cancellationRate + '%';
+
+                return { doctors, patients, slots, appointments };
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        // Load recent activity
+        async function loadRecentActivity() {
+            try {
+                const appointments = await fetch('/appointments/list').then(r => r.json());
+                const activityFeed = document.getElementById('activity-feed');
+                
+                const recentAppointments = appointments.slice(-5).reverse();
+                
+                activityFeed.innerHTML = recentAppointments.map((apt, idx) => `
+                    <div class="slide-in flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition" style="animation-delay: ${idx * 0.1}s">
+                        <div class="bg-blue-500 rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-calendar-check text-white"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-gray-800">Appointment Booked</p>
+                            <p class="text-xs text-gray-600">Patient #${apt.patient_id} • Slot #${apt.slot_id}</p>
+                            <p class="text-xs text-gray-500">${new Date(apt.booked_at).toLocaleString()}</p>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading activity:', error);
+            }
+        }
+
+        // Load upcoming appointments
+        async function loadUpcomingAppointments() {
+            try {
+                const [appointments, slots] = await Promise.all([
+                    fetch('/appointments/list').then(r => r.json()),
+                    fetch('/appointment_slots/list').then(r => r.json())
+                ]);
+
+                const upcomingContainer = document.getElementById('upcoming-appointments');
+                const now = new Date();
+                
+                const upcoming = appointments
+                    .map(apt => {
+                        const slot = slots.find(s => s.id === apt.slot_id);
+                        return { ...apt, slot };
+                    })
+                    .filter(apt => apt.slot && new Date(apt.slot.date) >= now)
+                    .slice(0, 5);
+
+                upcomingContainer.innerHTML = upcoming.map((apt, idx) => `
+                    <div class="slide-in flex items-center justify-between p-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg border-l-4 border-pink-500" style="animation-delay: ${idx * 0.1}s">
+                        <div>
+                            <p class="font-semibold text-gray-800">Patient #${apt.patient_id}</p>
+                            <p class="text-sm text-gray-600">${apt.slot.date} at ${apt.slot.start_time}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="bg-pink-200 text-pink-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                ${Math.ceil((new Date(apt.slot.date) - now) / (1000 * 60 * 60 * 24))} days
+                            </span>
+                        </div>
+                    </div>
+                `).join('') || '<p class="text-gray-500 text-center">No upcoming appointments</p>';
+            } catch (error) {
+                console.error('Error loading upcoming appointments:', error);
+            }
+        }
+
+        // Generate mini calendar
+        function generateMiniCalendar() {
+            const calendar = document.getElementById('mini-calendar');
+            const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            
+            // Add day headers
+            daysOfWeek.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'text-center text-xs font-semibold text-gray-600 p-2';
+                header.textContent = day;
+                calendar.appendChild(header);
+            });
+
+            // Add calendar days
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            const startDay = firstDay.getDay();
+
+            // Empty cells before first day
+            for (let i = 0; i < startDay; i++) {
+                const emptyCell = document.createElement('div');
+                calendar.appendChild(emptyCell);
+            }
+
+            // Calendar days
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dayCell = document.createElement('div');
+                const isToday = day === today.getDate();
+                const availability = Math.random(); // Mock availability
+                
+                let bgColor = 'bg-green-100 text-green-800';
+                if (availability < 0.3) bgColor = 'bg-red-100 text-red-800';
+                else if (availability < 0.6) bgColor = 'bg-yellow-100 text-yellow-800';
+                
+                dayCell.className = `calendar-day text-center p-2 rounded cursor-pointer ${bgColor} ${isToday ? 'ring-2 ring-blue-500 font-bold' : ''}`;
+                dayCell.textContent = day;
+                dayCell.onclick = () => {
+                    const selectedDate = new Date(today.getFullYear(), today.getMonth(), day);
+                    window.location.href = `/booking?date=${selectedDate.toISOString().split('T')[0]}`;
+                };
+                calendar.appendChild(dayCell);
+            }
+        }
+
+        // Load popular specialties
+        async function loadPopularSpecialties() {
+            try {
+                const doctors = await fetch('/doctors/list').then(r => r.json());
+                const specialties = {};
+                
+                doctors.forEach(doc => {
+                    specialties[doc.specialty] = (specialties[doc.specialty] || 0) + 1;
+                });
+
+                const specialtiesContainer = document.getElementById('popular-specialties');
+                const specialtyIcons = {
+                    'Cardiology': 'fa-heart',
+                    'Pediatrics': 'fa-baby',
+                    'Neurology': 'fa-brain',
+                    'Orthopedics': 'fa-bone',
+                    'Dermatology': 'fa-hand-sparkles',
+                    'Psychiatry': 'fa-head-side-virus'
+                };
+
+                const topSpecialties = Object.entries(specialties)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 6);
+
+                specialtiesContainer.innerHTML = topSpecialties.map(([specialty, count]) => {
+                    const icon = specialtyIcons[specialty] || 'fa-stethoscope';
+                    const colors = ['blue', 'green', 'purple', 'pink', 'yellow', 'indigo'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    return `
+                        <a href="/booking?specialty=${encodeURIComponent(specialty)}" class="card-hover bg-white rounded-xl shadow-lg p-6 text-center border-2 border-gray-100">
+                            <i class="fas ${icon} text-5xl text-${color}-500 mb-3"></i>
+                            <h3 class="font-bold text-gray-800 mb-2">${specialty}</h3>
+                            <p class="text-sm text-gray-600">${count} Doctor${count > 1 ? 's' : ''}</p>
+                        </a>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading specialties:', error);
+            }
+        }
+
+        // Load doctor spotlight
+        async function loadDoctorSpotlight() {
+            try {
+                const doctors = await fetch('/doctors/list').then(r => r.json());
+                const spotlight = document.getElementById('doctor-spotlight');
+                
+                const featured = doctors.slice(0, 3);
+                
+                spotlight.innerHTML = featured.map(doctor => `
+                    <div class="card-hover bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl shadow-lg p-6 text-center">
+                        <div class="bg-white rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-4 shadow-md">
+                            <i class="fas fa-user-md text-5xl text-purple-600"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">${doctor.name}</h3>
+                        <p class="text-purple-600 font-semibold mb-4">${doctor.specialty}</p>
+                        <div class="flex justify-center mb-3">
+                            <i class="fas fa-star text-yellow-500"></i>
+                            <i class="fas fa-star text-yellow-500"></i>
+                            <i class="fas fa-star text-yellow-500"></i>
+                            <i class="fas fa-star text-yellow-500"></i>
+                            <i class="fas fa-star text-yellow-500"></i>
+                        </div>
+                        <a href="/booking?doctor_id=${doctor.id}" class="inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-full hover:from-purple-700 hover:to-pink-700 transition font-semibold">
+                            Book Now
+                        </a>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading doctor spotlight:', error);
+            }
+        }
+
+        // Calculate time slot availability
+        async function calculateTimeSlotAvailability() {
+            try {
+                const slots = await fetch('/appointment_slots/list').then(r => r.json());
+                const today = new Date().toISOString().split('T')[0];
+                const todaySlots = slots.filter(s => s.date === today);
+
+                const morning = todaySlots.filter(s => {
+                    const hour = parseInt(s.start_time.split(':')[0]);
+                    return hour >= 6 && hour < 12 && s.is_available;
+                }).length;
+
+                const afternoon = todaySlots.filter(s => {
+                    const hour = parseInt(s.start_time.split(':')[0]);
+                    return hour >= 12 && hour < 18 && s.is_available;
+                }).length;
+
+                const evening = todaySlots.filter(s => {
+                    const hour = parseInt(s.start_time.split(':')[0]);
+                    return hour >= 18 && s.is_available;
+                }).length;
+
+                const totalMorning = todaySlots.filter(s => {
+                    const hour = parseInt(s.start_time.split(':')[0]);
+                    return hour >= 6 && hour < 12;
+                }).length;
+
+                const totalAfternoon = todaySlots.filter(s => {
+                    const hour = parseInt(s.start_time.split(':')[0]);
+                    return hour >= 12 && hour < 18;
+                }).length;
+
+                const totalEvening = todaySlots.filter(s => {
+                    const hour = parseInt(s.start_time.split(':')[0]);
+                    return hour >= 18;
+                }).length;
+
+                const morningPercent = totalMorning > 0 ? ((morning / totalMorning) * 100).toFixed(0) : 0;
+                const afternoonPercent = totalAfternoon > 0 ? ((afternoon / totalAfternoon) * 100).toFixed(0) : 0;
+                const eveningPercent = totalEvening > 0 ? ((evening / totalEvening) * 100).toFixed(0) : 0;
+
+                document.getElementById('morning-bar').style.width = morningPercent + '%';
+                document.getElementById('afternoon-bar').style.width = afternoonPercent + '%';
+                document.getElementById('evening-bar').style.width = eveningPercent + '%';
+
+                document.getElementById('morning-percent').textContent = morningPercent;
+                document.getElementById('afternoon-percent').textContent = afternoonPercent;
+                document.getElementById('evening-percent').textContent = eveningPercent;
+
+                // Determine best time
+                const times = [
+                    { name: 'Morning', percent: morningPercent },
+                    { name: 'Afternoon', percent: afternoonPercent },
+                    { name: 'Evening', percent: eveningPercent }
+                ];
+                const bestTime = times.sort((a, b) => b.percent - a.percent)[0];
+                document.getElementById('best-time').textContent = bestTime.name;
+            } catch (error) {
+                console.error('Error calculating time slot availability:', error);
+            }
+        }
+
+        // Create charts
+        async function createCharts() {
+            try {
+                const [appointments, slots] = await Promise.all([
+                    fetch('/appointments/list').then(r => r.json()),
+                    fetch('/appointment_slots/list').then(r => r.json())
+                ]);
+
+                // Appointments over time chart
+                const appointmentsByDate = {};
+                slots.forEach(slot => {
+                    if (!appointmentsByDate[slot.date]) {
+                        appointmentsByDate[slot.date] = 0;
+                    }
+                    if (!slot.is_available) {
+                        appointmentsByDate[slot.date]++;
+                    }
+                });
+
+                const dates = Object.keys(appointmentsByDate).sort().slice(-7);
+                const counts = dates.map(date => appointmentsByDate[date]);
+
+                const ctx1 = document.getElementById('appointments-chart').getContext('2d');
+                new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Appointments',
+                            data: counts,
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+
+                // Specialty distribution chart
+                const doctors = await fetch('/doctors/list').then(r => r.json());
+                const specialties = {};
+                doctors.forEach(doc => {
+                    specialties[doc.specialty] = (specialties[doc.specialty] || 0) + 1;
+                });
+
+                const ctx2 = document.getElementById('specialty-chart').getContext('2d');
+                new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(specialties),
+                        datasets: [{
+                            data: Object.values(specialties),
+                            backgroundColor: [
+                                'rgb(59, 130, 246)',
+                                'rgb(16, 185, 129)',
+                                'rgb(139, 92, 246)',
+                                'rgb(236, 72, 153)',
+                                'rgb(251, 191, 36)',
+                                'rgb(239, 68, 68)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error creating charts:', error);
+            }
+        }
+
+        // Hero search functionality
+        async function heroSearch() {
+            const searchTerm = document.getElementById('hero-search').value.toLowerCase();
+            const suggestions = document.getElementById('search-suggestions');
+
+            if (searchTerm.length < 2) {
+                suggestions.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const doctors = await fetch('/doctors/list').then(r => r.json());
+                const filtered = doctors.filter(doc => 
+                    doc.name.toLowerCase().includes(searchTerm) || 
+                    doc.specialty.toLowerCase().includes(searchTerm)
+                ).slice(0, 5);
+
+                if (filtered.length > 0) {
+                    suggestions.innerHTML = filtered.map(doc => `
+                        <a href="/booking?doctor_id=${doc.id}" class="block p-3 hover:bg-gray-100 transition">
+                            <p class="font-semibold text-gray-800">${doc.name}</p>
+                            <p class="text-sm text-gray-600">${doc.specialty}</p>
+                        </a>
+                    `).join('');
+                    suggestions.classList.remove('hidden');
+                } else {
+                    suggestions.innerHTML = '<p class="p-3 text-gray-600">No results found</p>';
+                    suggestions.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error searching:', error);
+            }
+        }
+
+        // Quick register modal
+        function openQuickRegister() {
+            document.getElementById('quick-register-modal').classList.remove('hidden');
+        }
+
+        function closeQuickRegister() {
+            document.getElementById('quick-register-modal').classList.add('hidden');
+            document.getElementById('quick-register-form').reset();
+        }
+
+        async function quickRegisterPatient(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+
+            try {
+                const response = await fetch('/patients/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    alert('Patient registered successfully!');
+                    closeQuickRegister();
+                    loadStatistics();
+                } else {
+                    alert('Error registering patient');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error registering patient');
+            }
+        }
+
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateGreeting();
+            await loadStatistics();
+            await loadRecentActivity();
+            await loadUpcomingAppointments();
+            generateMiniCalendar();
+            await loadPopularSpecialties();
+            await loadDoctorSpotlight();
+            await calculateTimeSlotAvailability();
+            await createCharts();
+
+            // Update every 30 seconds
+            setInterval(() => {
+                loadStatistics();
+                loadRecentActivity();
+                loadUpcomingAppointments();
+            }, 30000);
+        });
+
+        // Close search suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            const suggestions = document.getElementById('search-suggestions');
+            const searchInput = document.getElementById('hero-search');
+            if (!suggestions.contains(e.target) && e.target !== searchInput) {
+                suggestions.classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 </html>

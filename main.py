@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, WebSocket
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from db.database import SessionLocal
-from services import doctors, patients, slots, appointments, cancellations
+from services import doctors, patients, slots, appointments, cancellations, booking
 import asyncio
 import uvicorn
 
@@ -70,6 +70,11 @@ async def websocket_cancellations(websocket: WebSocket):
 async def home(request: Request):
     return templates.TemplateResponse("home.html", {"request": request})
 
+@app.get("/booking")
+async def booking_page(request: Request):
+    """New advanced booking interface"""
+    return templates.TemplateResponse("booking.html", {"request": request})
+
 @app.get("/doctors")
 async def doctors_page(request: Request):
     db = SessionLocal()
@@ -105,11 +110,13 @@ async def cancellations_page(request: Request):
     db.close()
     return templates.TemplateResponse("cancellations.html", {"request": request, "cancellations": cancellation_list})
 
-app.include_router(doctors.router, prefix="/doctors")
-app.include_router(patients.router, prefix="/patients")
-app.include_router(slots.router, prefix="/appointment_slots")
-app.include_router(appointments.router, prefix="/appointments")
-app.include_router(cancellations.router, prefix="/cancellations")
+# Include all routers
+app.include_router(doctors.router, prefix="/doctors", tags=["doctors"])
+app.include_router(patients.router, prefix="/patients", tags=["patients"])
+app.include_router(slots.router, prefix="/appointment_slots", tags=["slots"])
+app.include_router(appointments.router, prefix="/appointments", tags=["appointments"])
+app.include_router(cancellations.router, prefix="/cancellations", tags=["cancellations"])
+app.include_router(booking.router, prefix="/booking", tags=["booking"])  # New booking router
 
 if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port=8080)
