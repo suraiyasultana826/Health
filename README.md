@@ -1,6 +1,6 @@
-# Helth
+# Health
 
-![BOOK, TRACK and MANAGE](https://i.kym-cdn.com/entries/icons/original/000/032/279/Screen_Shot_2019-12-30_at_11.26.24_AM.png)
+
 
 A modern web application for managing healthcare operations including doctors, patients, appointment slots, appointments, and cancellations. Built with FastAPI, MySQL, SQLAlchemy, and Tailwind CSS, featuring real-time updates via WebSockets, responsive UI with modal-based interactions, and comprehensive testing.
 
