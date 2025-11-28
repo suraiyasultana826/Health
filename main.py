@@ -159,6 +159,21 @@ async def cancellations_page(request: Request):
     db.close()
     return templates.TemplateResponse("cancellations.html", {"request": request, "cancellations": cancellation_list})
 
+@app.get("/logout")
+async def logout_page(request: Request):
+    """Logout page"""
+    response = RedirectResponse(url="/login", status_code=302)
+    
+    # Get and delete session
+    token = request.cookies.get("session_token")
+    if token:
+        auth.delete_session(token)
+    
+    # Delete cookie
+    response.delete_cookie("session_token")
+    
+    return response
+
 # Include all routers
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(doctors.router, prefix="/doctors", tags=["doctors"])
