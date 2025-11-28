@@ -165,7 +165,7 @@ app.include_router(doctors.router, prefix="/doctors", tags=["doctors"])
 app.include_router(patients.router, prefix="/patients", tags=["patients"])
 app.include_router(slots.router, prefix="/appointment_slots", tags=["slots"])
 app.include_router(appointments.router, prefix="/appointments", tags=["appointments"])
-app.include_router(cancellations.router, prefix="/cancellations", tags=["cancellations"])
+# app.include_router(cancellations.router, prefix="/cancellations", tags=["cancellations"])
 app.include_router(booking.router, prefix="/booking", tags=["booking"])
 
 if __name__ == "__main__":
