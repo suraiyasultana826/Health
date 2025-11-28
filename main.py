@@ -1,8 +1,9 @@
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from db.database import SessionLocal
-from services import doctors, patients, slots, appointments, cancellations, booking
+from services import doctors, patients, slots, appointments, cancellations, booking, auth
 import asyncio
 import uvicorn
 
@@ -66,17 +67,49 @@ async def websocket_appointments(websocket: WebSocket):
 async def websocket_cancellations(websocket: WebSocket):
     await websocket_endpoint(websocket, "cancellations")
 
+# Helper function to check authentication
+def is_authenticated(request: Request) -> bool:
+    """Check if user is authenticated"""
+    token = request.cookies.get("session_token")
+    if not token:
+        return False
+    
+    user = auth.get_user_from_session(token)
+    return user is not None
+
+# Login page (no authentication required)
+@app.get("/login")
+async def login_page(request: Request):
+    """Display login page"""
+    # If already logged in, redirect to home
+    if is_authenticated(request):
+        return RedirectResponse(url="/", status_code=302)
+    
+    return templates.TemplateResponse("login.html", {"request": request})
+
+# Protected routes - require authentication
 @app.get("/")
 async def home(request: Request):
+    """Homepage - requires authentication"""
+    if not is_authenticated(request):
+        return RedirectResponse(url="/login", status_code=302)
+    
     return templates.TemplateResponse("home.html", {"request": request})
 
 @app.get("/booking")
 async def booking_page(request: Request):
-    """New advanced booking interface"""
+    """Advanced booking interface - requires authentication"""
+    if not is_authenticated(request):
+        return RedirectResponse(url="/login", status_code=302)
+    
     return templates.TemplateResponse("booking.html", {"request": request})
 
 @app.get("/doctors")
 async def doctors_page(request: Request):
+    """Doctors page - requires authentication"""
+    if not is_authenticated(request):
+        return RedirectResponse(url="/login", status_code=302)
+    
     db = SessionLocal()
     doctor_list = doctors.get_doctors(db)
     db.close()
@@ -84,6 +117,10 @@ async def doctors_page(request: Request):
 
 @app.get("/patients")
 async def patients_page(request: Request):
+    """Patients page - requires authentication"""
+    if not is_authenticated(request):
+        return RedirectResponse(url="/login", status_code=302)
+    
     db = SessionLocal()
     patient_list = patients.get_patients(db)
     db.close()
@@ -91,6 +128,10 @@ async def patients_page(request: Request):
 
 @app.get("/slots")
 async def slots_page(request: Request):
+    """Slots page - requires authentication"""
+    if not is_authenticated(request):
+        return RedirectResponse(url="/login", status_code=302)
+    
     db = SessionLocal()
     slot_list = slots.get_slots(db)
     db.close()
@@ -98,6 +139,10 @@ async def slots_page(request: Request):
 
 @app.get("/appointments")
 async def appointments_page(request: Request):
+    """Appointments page - requires authentication"""
+    if not is_authenticated(request):
+        return RedirectResponse(url="/login", status_code=302)
+    
     db = SessionLocal()
     appointment_list = appointments.get_appointments(db)
     db.close()
@@ -105,18 +150,23 @@ async def appointments_page(request: Request):
 
 @app.get("/cancellations")
 async def cancellations_page(request: Request):
+    """Cancellations page - requires authentication"""
+    if not is_authenticated(request):
+        return RedirectResponse(url="/login", status_code=302)
+    
     db = SessionLocal()
     cancellation_list = cancellations.get_cancellations(db)
     db.close()
     return templates.TemplateResponse("cancellations.html", {"request": request, "cancellations": cancellation_list})
 
 # Include all routers
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(doctors.router, prefix="/doctors", tags=["doctors"])
 app.include_router(patients.router, prefix="/patients", tags=["patients"])
 app.include_router(slots.router, prefix="/appointment_slots", tags=["slots"])
 app.include_router(appointments.router, prefix="/appointments", tags=["appointments"])
 app.include_router(cancellations.router, prefix="/cancellations", tags=["cancellations"])
-app.include_router(booking.router, prefix="/booking", tags=["booking"])  # New booking router
+app.include_router(booking.router, prefix="/booking", tags=["booking"])
 
 if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port=8080)
