@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Healthcare Ticketing System</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.25);
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen font-sans">
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-md w-full">
+            <!-- Logo and Title -->
+            <div class="text-center mb-8 fade-in">
+                <div class="inline-block gradient-bg text-white rounded-full p-6 mb-4 shadow-lg">
+                    <i class="fas fa-heartbeat text-5xl"></i>
+                </div>
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">Healthcare Ticketing</h1>
+                <p class="text-gray-600">Sign in to manage your healthcare</p>
+            </div>
+
+            <!-- Login Card -->
+            <div class="bg-white rounded-2xl shadow-2xl p-8 card-hover fade-in" style="animation-delay: 0.2s">
+                <div class="mb-6">
+                    <div class="flex border-b border-gray-200">
+                        <button 
+                            id="login-tab" 
+                            class="flex-1 py-3 px-4 text-center font-semibold border-b-2 border-purple-600 text-purple-600 transition"
+                            onclick="switchTab('login')"
+                        >
+                            Login
+                        </button>
+                        <button 
+                            id="register-tab" 
+                            class="flex-1 py-3 px-4 text-center font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition"
+                            onclick="switchTab('register')"
+                        >
+                            Register
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Login Form -->
+                <div id="login-form-container">
+                    <form id="login-form" onsubmit="handleLogin(event)">
+                        <div class="mb-6">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">
+                                <i class="fas fa-user mr-2 text-purple-600"></i>Username
+                            </label>
+                            <input 
+                                type="text" 
+                                name="username" 
+                                class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                                placeholder="Enter your username"
+                                required
+                            >
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">
+                                <i class="fas fa-lock mr-2 text-purple-600"></i>Password
+                            </label>
+                            <div class="relative">
+                                <input 
+                                    type="password" 
+                                    name="password" 
+                                    id="login-password"
+                                    class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                                    placeholder="Enter your password"
+                                    required
+                                >
+                                <button 
+                                    type="button" 
+                                    onclick="togglePassword('login-password')"
+                                    class="absolute right-3 top-3 text-gray-600 hover:text-gray-800"
+                                >
+                                    <i class="fas fa-eye" id="login-password-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2">
+                                <span class="text-sm text-gray-600">Remember me</span>
+                            </label>
+                        </div>
+
+                        <button 
+                            type="submit" 
+                            class="w-full gradient-bg text-white py-3 rounded-lg hover:opacity-90 transition font-semibold shadow-lg text-lg"
+                        >
+                            <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Register Form -->
+                <div id="register-form-container" class="hidden">
+                    <form id="register-form" onsubmit="handleRegister(event)">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">
+                                <i class="fas fa-user mr-2 text-blue-600"></i>Username
+                            </label>
+                            <input 
+                                type="text" 
+                                name="username" 
+                                class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                placeholder="Choose a username"
+                                required
+                            >
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">
+                                <i class="fas fa-envelope mr-2 text-blue-600"></i>Email
+                            </label>
+                            <input 
+                                type="email" 
+                                name="email" 
+                                class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                placeholder="Enter your email"
+                                required
+                            >
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">
+                                <i class="fas fa-lock mr-2 text-blue-600"></i>Password
+                            </label>
+                            <div class="relative">
+                                <input 
+                                    type="password" 
+                                    name="password" 
+                                    id="register-password"
+                                    class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    placeholder="Create a password"
+                                    required
+                                    minlength="6"
+                                >
+                                <button 
+                                    type="button" 
+                                    onclick="togglePassword('register-password')"
+                                    class="absolute right-3 top-3 text-gray-600 hover:text-gray-800"
+                                >
+                                    <i class="fas fa-eye" id="register-password-icon"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">
+                                <i class="fas fa-user-tag mr-2 text-blue-600"></i>Role
+                            </label>
+                            <select 
+                                name="role" 
+                                class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                            >
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+
+                        <button 
+                            type="submit" 
+                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg hover:opacity-90 transition font-semibold shadow-lg text-lg"
+                        >
+                            <i class="fas fa-user-plus mr-2"></i>Create Account
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Alert Message -->
+                <div id="alert-message" class="hidden mt-6 p-4 rounded-lg">
+                    <p id="alert-text" class="text-sm font-semibold"></p>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center mt-8 text-gray-600 fade-in" style="animation-delay: 0.4s">
+                <p class="text-sm">
+                    &copy; 2025 Healthcare Ticketing System. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Switch between login and register tabs
+        function switchTab(tab) {
+            const loginTab = document.getElementById('login-tab');
+            const registerTab = document.getElementById('register-tab');
+            const loginForm = document.getElementById('login-form-container');
+            const registerForm = document.getElementById('register-form-container');
+            const alertMessage = document.getElementById('alert-message');
+
+            // Hide alert
+            alertMessage.classList.add('hidden');
+
+            if (tab === 'login') {
+                loginTab.classList.add('border-purple-600', 'text-purple-600');
+                loginTab.classList.remove('border-transparent', 'text-gray-500');
+                registerTab.classList.remove('border-blue-600', 'text-blue-600');
+                registerTab.classList.add('border-transparent', 'text-gray-500');
+                
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+            } else {
+                registerTab.classList.add('border-blue-600', 'text-blue-600');
+                registerTab.classList.remove('border-transparent', 'text-gray-500');
+                loginTab.classList.remove('border-purple-600', 'text-purple-600');
+                loginTab.classList.add('border-transparent', 'text-gray-500');
+                
+                registerForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+            }
+        }
+
+        // Toggle password visibility
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(inputId + '-icon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alert-message');
+            const alertText = document.getElementById('alert-text');
+            
+            alertText.textContent = message;
+            alertBox.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800');
+            
+            if (type === 'error') {
+                alertBox.classList.add('bg-red-100', 'text-red-800');
+            } else {
+                alertBox.classList.add('bg-green-100', 'text-green-800');
+            }
+        }
+
+        // Handle login
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
+                } else {
+                    showAlert(data.detail || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showAlert('An error occurred. Please try again.', 'error');
+                console.error('Login error:', error);
+            }
+        }
+
+        // Handle registration
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            try {
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert('Registration successful! Please login.', 'success');
+                    form.reset();
+                    setTimeout(() => {
+                        switchTab('login');
+                    }, 2000);
+                } else {
+                    showAlert(data.detail || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                showAlert('An error occurred. Please try again.', 'error');
+                console.error('Registration error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
